@@ -5468,33 +5468,77 @@ def reiniciar_app():
             # Contar registros antes de borrar
             equipos_count = conn.execute('SELECT COUNT(*) FROM equipos').fetchone()[0]
             mantenimientos_count = conn.execute('SELECT COUNT(*) FROM mantenimientos').fetchone()[0]
+            repuestos_count = conn.execute('SELECT COUNT(*) FROM repuestos').fetchone()[0]
+            movimientos_count = conn.execute('SELECT COUNT(*) FROM movimientos_repuestos').fetchone()[0]
             
-            # Limpiar todas las tablas de equipos y mantenimientos
+            # Deshabilitar restricciones de clave foránea temporalmente
+            conn.execute('PRAGMA foreign_keys = OFF')
+            
+            # Eliminar en orden correcto (desde las tablas dependientes hacia las principales)
+            # 1. Eliminar todas las tablas que referencian otras tablas
+            conn.execute('DELETE FROM movimientos_repuestos')
+            conn.execute('DELETE FROM clasificaciones_automaticas')
+            conn.execute('DELETE FROM lecturas_iot')
+            conn.execute('DELETE FROM dispositivos_iot')
+            conn.execute('DELETE FROM programas_mantenimiento')
+            conn.execute('DELETE FROM alertas_automaticas')
+            conn.execute('DELETE FROM workflow_aprobaciones')
+            conn.execute('DELETE FROM historial_automatizacion')
+            conn.execute('DELETE FROM auditoria')
+            conn.execute('DELETE FROM notificaciones')
+            conn.execute('DELETE FROM sesiones_usuario')
+            
+            # 2. Eliminar mantenimientos (que referencian equipos)
             conn.execute('DELETE FROM mantenimientos')
+            
+            # 3. Eliminar equipos (que referencian clientes)
             conn.execute('DELETE FROM equipos')
             
-            # Reiniciar los auto-increment
-            conn.execute('DELETE FROM sqlite_sequence WHERE name="equipos"')
-            conn.execute('DELETE FROM sqlite_sequence WHERE name="mantenimientos"')
+            # 4. Eliminar repuestos (independientes)
+            conn.execute('DELETE FROM repuestos')
+            
+            # 5. Eliminar clientes (ya no tienen dependencias)
+            conn.execute('DELETE FROM clientes')
+            
+            # Reiniciar los auto-increment para todas las tablas principales
+            conn.execute('DELETE FROM sqlite_sequence WHERE name IN ("equipos", "mantenimientos", "repuestos", "clientes", "movimientos_repuestos")')
+            
+            # Reactivar restricciones de clave foránea
+            conn.execute('PRAGMA foreign_keys = ON')
             
             conn.commit()
             conn.close()
             
-            flash(f'Aplicación reiniciada exitosamente! Se eliminaron {equipos_count} equipos y {mantenimientos_count} mantenimientos.', 'success')
+            total_eliminados = equipos_count + mantenimientos_count + repuestos_count + movimientos_count
+            flash(f'Aplicación reiniciada exitosamente! Se eliminaron: {equipos_count} equipos, {mantenimientos_count} mantenimientos, {repuestos_count} repuestos y {movimientos_count} movimientos. Total: {total_eliminados} registros.', 'success')
             return redirect(url_for('index'))
             
         except Exception as e:
+            # Asegurar que las restricciones se reactiven en caso de error
+            try:
+                conn.execute('PRAGMA foreign_keys = ON')
+                conn.commit()
+                conn.close()
+            except:
+                pass
             flash(f'Error al reiniciar la aplicación: {str(e)}', 'error')
     
     # Obtener estadísticas actuales
-    conn = get_db_connection()
-    total_equipos = conn.execute('SELECT COUNT(*) FROM equipos').fetchone()[0]
-    total_mantenimientos = conn.execute('SELECT COUNT(*) FROM mantenimientos').fetchone()[0]
-    conn.close()
+    try:
+        conn = get_db_connection()
+        total_equipos = conn.execute('SELECT COUNT(*) FROM equipos').fetchone()[0]
+        total_mantenimientos = conn.execute('SELECT COUNT(*) FROM mantenimientos').fetchone()[0]
+        total_repuestos = conn.execute('SELECT COUNT(*) FROM repuestos').fetchone()[0]
+        total_clientes = conn.execute('SELECT COUNT(*) FROM clientes').fetchone()[0]
+        conn.close()
+    except Exception as e:
+        total_equipos = total_mantenimientos = total_repuestos = total_clientes = 0
     
     return render_template('reiniciar_app.html', 
                          total_equipos=total_equipos,
-                         total_mantenimientos=total_mantenimientos)
+                         total_mantenimientos=total_mantenimientos,
+                         total_repuestos=total_repuestos,
+                         total_clientes=total_clientes)
 
 @app.route('/mantenimientos/nuevo', methods=['GET', 'POST'])
 def nuevo_mantenimiento():
@@ -5738,15 +5782,28 @@ def reportes_avanzados():
 @app.route('/api/stats')
 def api_stats():
     """API endpoint para obtener estadísticas en tiempo real"""
-    conn = get_db_connection()
-    equipos = conn.execute('SELECT COUNT(*) FROM equipos').fetchone()[0]
-    mantenimientos = conn.execute('SELECT COUNT(*) FROM mantenimientos').fetchone()[0]
-    conn.close()
-    
-    return jsonify({
-        'equipos': equipos,
-        'mantenimientos': mantenimientos
-    })
+    try:
+        conn = get_db_connection()
+        equipos = conn.execute('SELECT COUNT(*) FROM equipos').fetchone()[0]
+        mantenimientos = conn.execute('SELECT COUNT(*) FROM mantenimientos').fetchone()[0]
+        repuestos = conn.execute('SELECT COUNT(*) FROM repuestos').fetchone()[0]
+        clientes = conn.execute('SELECT COUNT(*) FROM clientes').fetchone()[0]
+        conn.close()
+        
+        return jsonify({
+            'equipos': equipos,
+            'mantenimientos': mantenimientos,
+            'repuestos': repuestos,
+            'clientes': clientes
+        })
+    except Exception as e:
+        return jsonify({
+            'equipos': 0,
+            'mantenimientos': 0,
+            'repuestos': 0,
+            'clientes': 0,
+            'error': str(e)
+        })
 
 @app.route('/repuestos')
 def repuestos():

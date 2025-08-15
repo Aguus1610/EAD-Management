@@ -54,18 +54,32 @@
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-md-6">
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 border rounded">
+                            <i class="fas fa-users fa-2x text-info mb-2"></i>
+                            <h4 class="text-info" id="clientes-count">{{ total_clientes or 0 }}</h4>
+                            <p class="text-muted mb-0">Clientes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
                         <div class="p-3 border rounded">
                             <i class="fas fa-cogs fa-2x text-primary mb-2"></i>
                             <h4 class="text-primary" id="equipos-count">{{ total_equipos or 0 }}</h4>
-                            <p class="text-muted mb-0">Equipos Registrados</p>
+                            <p class="text-muted mb-0">Equipos</p>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3 mb-3">
                         <div class="p-3 border rounded">
                             <i class="fas fa-wrench fa-2x text-success mb-2"></i>
                             <h4 class="text-success" id="mantenimientos-count">{{ total_mantenimientos or 0 }}</h4>
-                            <p class="text-muted mb-0">Mantenimientos Registrados</p>
+                            <p class="text-muted mb-0">Mantenimientos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 border rounded">
+                            <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                            <h4 class="text-warning" id="repuestos-count">{{ total_repuestos or 0 }}</h4>
+                            <p class="text-muted mb-0">Repuestos</p>
                         </div>
                     </div>
                 </div>
@@ -175,8 +189,10 @@ function actualizarContadores() {
     fetch('/api/stats')
         .then(response => response.json())
         .then(data => {
+            document.getElementById('clientes-count').textContent = data.clientes || 0;
             document.getElementById('equipos-count').textContent = data.equipos || 0;
             document.getElementById('mantenimientos-count').textContent = data.mantenimientos || 0;
+            document.getElementById('repuestos-count').textContent = data.repuestos || 0;
         })
         .catch(error => console.log('No se pudieron cargar las estadísticas'));
 }
