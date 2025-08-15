@@ -2,7 +2,7 @@ services:
   - type: web
     name: sistema-gestion-taller
     env: python
-    repo: https://github.com/tu-usuario/sistema-gestion-taller
+    repo: https://github.com/Aguus1610/EAD-Management
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --config gunicorn.conf.py app:app
     plan: free
