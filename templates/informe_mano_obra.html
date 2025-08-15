@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Informe de Mano de Obra - Gestión de Taller{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --porcentaje-complejos: {{ estadisticas_globales.porcentaje_complejos|default(0) }}%;
+    --porcentaje-medios: {{ estadisticas_globales.porcentaje_medios|default(0) }}%;
+    --porcentaje-simples: {{ estadisticas_globales.porcentaje_simples|default(0) }}%;
+}
+</style>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-user-cog"></i> Análisis de Mano de Obra</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i> Volver a Reportes
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Estadísticas globales -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clipboard-list fa-2x text-primary mb-2"></i>
+                <h4 class="text-primary">{{ estadisticas_globales.total_trabajos }}</h4>
+                <small class="text-muted">Total Trabajos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-cogs fa-2x text-danger mb-2"></i>
+                <h4 class="text-danger">{{ estadisticas_globales.total_complejos }}</h4>
+                <small class="text-muted">Complejos</small>
+                <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-danger" style="width: var(--porcentaje-complejos, 0%)"></div>
+                </div>
+                <small class="text-muted">{{ estadisticas_globales.porcentaje_complejos }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                <h4 class="text-warning">{{ estadisticas_globales.total_medios }}</h4>
+                <small class="text-muted">Medios</small>
+                <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-warning" style="width: var(--porcentaje-medios, 0%)"></div>
+                </div>
+                <small class="text-muted">{{ estadisticas_globales.porcentaje_medios }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check fa-2x text-success mb-2"></i>
+                <h4 class="text-success">{{ estadisticas_globales.total_simples }}</h4>
+                <small class="text-muted">Simples</small>
+                <div class="progress mt-1" style="height: 4px;">
+                    <div class="progress-bar bg-success" style="width: var(--porcentaje-simples, 0%)"></div>
+                </div>
+                <small class="text-muted">{{ estadisticas_globales.porcentaje_simples }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">Distribución de Complejidad</h6>
+                <canvas id="complejidadChart" width="200" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis detallado por cliente -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> Análisis Detallado por Cliente
+                </h5>
+                <small class="text-muted">Complejidad de trabajos y especialización por cliente</small>
+            </div>
+            <div class="card-body">
+                {% for cliente, data in analisis_por_cliente.items() %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-0"><i class="fas fa-building text-primary"></i> {{ cliente }}</h6>
+                                <small class="text-muted">{{ data.equipos_count }} equipos atendidos</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-primary fs-6">{{ data.total_trabajos }} trabajos total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Complejidad -->
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-chart-bar text-info"></i> Complejidad de Trabajos</h6>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <small>Complejos</small>
+                                        <small>{{ data.complejos }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-danger" data-width="{{ ((data.complejos / data.total_trabajos * 100) if data.total_trabajos > 0 else 0)|round(1) }}"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <small>Medios</small>
+                                        <small>{{ data.medios }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" data-width="{{ ((data.medios / data.total_trabajos * 100) if data.total_trabajos > 0 else 0)|round(1) }}"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <small>Simples</small>
+                                        <small>{{ data.simples }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" data-width="{{ ((data.simples / data.total_trabajos * 100) if data.total_trabajos > 0 else 0)|round(1) }}"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tipos de trabajo -->
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-cogs text-warning"></i> Especialización</h6>
+                                {% for tipo, cantidad in data.tipos_trabajo.items() %}
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small>{{ tipo }}</small>
+                                    <span class="badge bg-{{ 'primary' if tipo == 'Hidráulico' else 'success' if tipo == 'Eléctrico' else 'info' if tipo == 'Mecánico' else 'warning' if tipo == 'Mantenimiento' else 'secondary' }}">
+                                        {{ cantidad }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Trabajos recientes -->
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-history text-success"></i> Trabajos Recientes</h6>
+                                {% for trabajo in data.trabajos_detalle %}
+                                <div class="mb-2 p-2 border rounded-2" style="font-size: 0.85em;">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-muted">{{ trabajo.fecha }}</small>
+                                        <span class="badge bg-{{ 'danger' if trabajo.complejidad == 'complejo' else 'warning' if trabajo.complejidad == 'medio' else 'success' }}">
+                                            {{ trabajo.complejidad }}
+                                        </span>
+                                    </div>
+                                    <div class="fw-bold">{{ trabajo.equipo }}</div>
+                                    <small class="text-muted">{{ trabajo.descripcion }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Equipos atendidos -->
+                        <div class="mt-3 pt-3 border-top">
+                            <h6><i class="fas fa-tools text-secondary"></i> Equipos Atendidos ({{ data.equipos_count }})</h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for equipo in data.equipos_atendidos %}
+                                <span class="badge bg-light text-dark">{{ equipo }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recomendaciones -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb"></i> Análisis y Recomendaciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-trophy text-warning"></i> Clientes por Complejidad:</h6>
+                        <div class="list-group">
+                            {% set clientes_complejos = analisis_por_cliente.items()|sort(attribute='1.complejos', reverse=true) %}
+                            {% for cliente, data in clientes_complejos[:3] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ cliente }}</strong>
+                                    <span class="badge bg-danger">{{ data.complejos }} trabajos complejos</span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ ((data.complejos / data.total_trabajos * 100) if data.total_trabajos > 0 else 0)|round(1) }}% de complejidad
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chart-pie text-info"></i> Insights del Negocio:</h6>
+                        <div class="alert alert-light">
+                            <ul class="mb-0">
+                                <li><strong>Trabajo más complejo:</strong> 
+                                    {{ estadisticas_globales.porcentaje_complejos }}% de trabajos son de alta complejidad
+                                </li>
+                                <li><strong>Eficiencia:</strong> 
+                                    {{ estadisticas_globales.porcentaje_simples }}% son trabajos de mantenimiento básico
+                                </li>
+                                <li><strong>Especialización:</strong> 
+                                    {% set tipos_predominantes = {} %}
+                                    {% for cliente, data in analisis_por_cliente.items() %}
+                                        {% for tipo, cant in data.tipos_trabajo.items() %}
+                                            {% if tipo not in tipos_predominantes %}
+                                                {% set _ = tipos_predominantes.update({tipo: 0}) %}
+                                            {% endif %}
+                                            {% set _ = tipos_predominantes.update({tipo: tipos_predominantes[tipo] + cant}) %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% set tipo_principal = tipos_predominantes.items()|sort(attribute='1', reverse=true)|first %}
+                                    {% if tipo_principal %}
+                                        {{ tipo_principal[1] }} trabajos de tipo "{{ tipo_principal[0] }}"
+                                    {% else %}
+                                        Datos insuficientes
+                                    {% endif %}
+                                </li>
+                                <li><strong>Recomendación:</strong> 
+                                    {% if estadisticas_globales.porcentaje_complejos > 30 %}
+                                        Considerar capacitación especializada para trabajos complejos
+                                    {% elif estadisticas_globales.porcentaje_simples > 60 %}
+                                        Oportunidad para automatizar trabajos de mantenimiento rutinario
+                                    {% else %}
+                                        Balance adecuado entre complejidad y eficiencia
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="application/json" id="complexity-data">
+{
+    "complejos": {{ estadisticas_globales.total_complejos|default(0) }},
+    "medios": {{ estadisticas_globales.total_medios|default(0) }},
+    "simples": {{ estadisticas_globales.total_simples|default(0) }}
+}
+</script>
+
+<script>
+
+// Inicializar barras de progreso y gráficos
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar barras de progreso dinámicas
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+    
+    // Gráfico de complejidad
+    const ctx = document.getElementById('complejidadChart');
+    const dataScript = document.getElementById('complexity-data');
+    
+    if (ctx && dataScript) {
+        const complexityData = JSON.parse(dataScript.textContent);
+        
+        new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Complejos', 'Medios', 'Simples'],
+                datasets: [{
+                    data: [
+                        complexityData.complejos,
+                        complexityData.medios,
+                        complexityData.simples
+                    ],
+                    backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style media="print">
+    .btn, .btn-toolbar { display: none !important; }
+    .sidebar { display: none !important; }
+    .container-fluid { margin: 0 !important; padding: 0 !important; }
+    main { margin: 0 !important; }
+    .card { break-inside: avoid; }
+    @page { margin: 1cm; }
+</style>
+
+{% endblock %}

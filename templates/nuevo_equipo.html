@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Equipo - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-plus-circle"></i> Agregar Nuevo Equipo</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Selección de Cliente -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>Asignación de Cliente:</strong> Selecciona el cliente propietario de este equipo.
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label">
+                                <i class="fas fa-user"></i> Cliente Propietario *
+                            </label>
+                            <select class="form-control" id="cliente_id" name="cliente_id" required>
+                                <option value="">Seleccionar cliente...</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <i class="fas fa-plus"></i> 
+                                <a href="{{ url_for('nuevo_cliente') }}" target="_blank">¿No encuentras el cliente? Crear nuevo cliente</a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-tools"></i> Nombre del Equipo *
+                            </label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="marca" class="form-label">Marca</label>
+                            <input type="text" class="form-control" id="marca" name="marca">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modelo" class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_serie" class="form-label">Número de Serie</label>
+                            <input type="text" class="form-control" id="numero_serie" name="numero_serie">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_compra" class="form-label">Fecha de Compra</label>
+                            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="Activo" selected>Activo</option>
+                                <option value="Inactivo">Inactivo</option>
+                                <option value="Mantenimiento">En Mantenimiento</option>
+                                <option value="Fuera de Servicio">Fuera de Servicio</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ubicacion" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Taller Principal, Área 2, etc.">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales sobre el equipo..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Equipo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mejorar UX del formulario
+document.getElementById('cliente_id').addEventListener('change', function() {
+    const clienteSelect = this;
+    const selectedOption = clienteSelect.options[clienteSelect.selectedIndex];
+    const card = document.querySelector('.card');
+    
+    if (selectedOption.value) {
+        // Resaltar la selección
+        clienteSelect.classList.add('border-success');
+        card.classList.add('border-primary');
+        
+        // Mostrar mensaje de confirmación
+        const alertDiv = document.querySelector('.alert-info');
+        alertDiv.innerHTML = `
+            <i class="fas fa-check-circle text-success"></i> 
+            <strong>Cliente seleccionado:</strong> ${selectedOption.text}. 
+            Este equipo será asignado a este cliente.
+        `;
+        alertDiv.classList.remove('alert-info');
+        alertDiv.classList.add('alert-success');
+    } else {
+        clienteSelect.classList.remove('border-success');
+        card.classList.remove('border-primary');
+        
+        // Restaurar mensaje original
+        const alertDiv = document.querySelector('.alert-success');
+        if (alertDiv) {
+            alertDiv.innerHTML = `
+                <i class="fas fa-info-circle"></i> 
+                <strong>Asignación de Cliente:</strong> Selecciona el cliente propietario de este equipo.
+            `;
+            alertDiv.classList.remove('alert-success');
+            alertDiv.classList.add('alert-info');
+        }
+    }
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const clienteId = document.getElementById('cliente_id').value;
+    const nombre = document.getElementById('nombre').value.trim();
+    
+    if (!clienteId) {
+        e.preventDefault();
+        showInfo('Por favor selecciona un cliente propietario para el equipo.'));
+        document.getElementById('cliente_id').focus();
+        return false;
+    }
+    
+    if (!nombre) {
+        e.preventDefault();
+        showInfo('Por favor ingresa el nombre del equipo.'));
+        document.getElementById('nombre').focus();
+        return false;
+    }
+});
+
+// Auto-completar nombre de equipo basado en marca y modelo
+function autoCompletarNombre() {
+    const marca = document.getElementById('marca').value.trim();
+    const modelo = document.getElementById('modelo').value.trim();
+    const nombreField = document.getElementById('nombre');
+    
+    if (marca && modelo && !nombreField.value.trim()) {
+        nombreField.value = `${marca} ${modelo}`;
+        nombreField.classList.add('border-info');
+        setTimeout(() => nombreField.classList.remove('border-info'), 2000);
+    }
+}
+
+document.getElementById('marca').addEventListener('blur', autoCompletarNombre);
+document.getElementById('modelo').addEventListener('blur', autoCompletarNombre);
+</script>
+{% endblock %}

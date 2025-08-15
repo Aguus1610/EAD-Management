@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Mantenimientos - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-wrench"></i> Gestión de Mantenimientos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('nuevo_mantenimiento') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Mantenimiento
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="mantenimientosTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-column="equipo_nombre">
+                                <i class="fas fa-sort"></i> Equipo
+                            </th>
+                            <th class="sortable" data-column="tipo_mantenimiento">
+                                <i class="fas fa-sort"></i> Tipo
+                            </th>
+                            <th class="sortable" data-column="fecha_mantenimiento">
+                                <i class="fas fa-sort"></i> Fecha
+                            </th>
+                            <th class="sortable" data-column="tecnico">
+                                <i class="fas fa-sort"></i> Técnico
+                            </th>
+                            <th class="sortable" data-column="costo">
+                                <i class="fas fa-sort"></i> Costo
+                            </th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mantenimiento in mantenimientos %}
+                        <tr>
+                            <td><strong>{{ mantenimiento.equipo_nombre }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if mantenimiento.tipo_mantenimiento == 'Preventivo' else 'danger' }}">
+                                    {{ mantenimiento.tipo_mantenimiento }}
+                                </span>
+                            </td>
+                            <td>{{ mantenimiento.fecha_mantenimiento }}</td>
+                            <td>{{ mantenimiento.tecnico or '-' }}</td>
+                            <td>
+                                {% if mantenimiento.costo %}
+                                    ${{ "%.2f"|format(mantenimiento.costo) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ mantenimiento.descripcion[:50] }}{% if mantenimiento.descripcion|length > 50 %}...{% endif %}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('editar_mantenimiento', id=mantenimiento.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Editar mantenimiento">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger eliminar-mantenimiento" 
+                                            data-id="{{ mantenimiento.id }}"
+                                            data-equipo="{{ mantenimiento.equipo_nombre }}"
+                                            data-fecha="{{ mantenimiento.fecha_mantenimiento }}"
+                                            title="Eliminar mantenimiento">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-wrench fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay mantenimientos registrados</h5>
+                <p class="text-muted">Comienza registrando el primer mantenimiento de tus equipos.</p>
+                <a href="{{ url_for('nuevo_mantenimiento') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Registrar Mantenimiento
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de que quieres eliminar este mantenimiento?</strong></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning"></i> Esta acción no se puede deshacer.
+                    <br><strong>Mantenimiento:</strong> <span id="equipoInfo"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Event listeners usando delegación de eventos para mejor rendimiento
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar clics en botones de eliminar mantenimiento
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.eliminar-mantenimiento')) {
+            const button = e.target.closest('.eliminar-mantenimiento');
+            const id = button.dataset.id;
+            const equipo = button.dataset.equipo;
+            const fecha = button.dataset.fecha;
+            
+            confirmarEliminacion(id, equipo, fecha);
+        }
+    });
+});
+
+function confirmarEliminacion(id, equipoNombre, fecha) {
+    // Actualizar información en el modal
+    document.getElementById('equipoInfo').textContent = equipoNombre + ' - ' + fecha;
+    document.getElementById('formEliminar').action = `/mantenimientos/${id}/eliminar`;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('eliminarModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

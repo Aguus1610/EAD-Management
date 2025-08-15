@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis de Repuestos - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado y Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1><i class="fas fa-cogs"></i> Análisis de Repuestos Utilizados</h1>
+                <div>
+                    <a href="{{ url_for('reportes_avanzados') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Reportes
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Panel de Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i> Filtros de Análisis
+                        <button class="btn btn-sm btn-outline-primary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosPanel">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </h5>
+                </div>
+                <div class="collapse show" id="filtrosPanel">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" name="fecha_inicio" value="{{ fecha_inicio }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" name="fecha_fin" value="{{ fecha_fin }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cliente Específico</label>
+                                <select class="form-control" name="cliente_id">
+                                    <option value="">Todos los clientes</option>
+                                    {% for cliente in clientes_lista %}
+                                    <option value="{{ cliente.id }}" {% if cliente_id == cliente.id|string %}selected{% endif %}>
+                                        {{ cliente.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Mostrar Detalles</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="detalles" value="1" {% if mostrar_detalles %}checked{% endif %}>
+                                    <label class="form-check-label">Incluir mantenimientos</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Aplicar Filtros
+                                </button>
+                                <a href="{{ url_for('informe_repuestos') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Filtros -->
+    {% if fecha_inicio or fecha_fin or cliente_id %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i> <strong>Filtros Aplicados:</strong>
+        {% if fecha_inicio %}Desde: {{ fecha_inicio }}{% endif %}
+        {% if fecha_fin %} Hasta: {{ fecha_fin }}{% endif %}
+        {% if cliente_id %} Cliente: {{ clientes_lista|selectattr('id', 'equalto', cliente_id|int)|map(attribute='nombre')|first }}{% endif %}
+        - Analizando {{ stats.total_mantenimientos }} mantenimientos
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-wrench fa-2x text-primary mb-2"></i>
+                    <h3 class="text-primary">{{ stats.total_mantenimientos }}</h3>
+                    <p class="text-muted mb-0">Mantenimientos Analizados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-cogs fa-2x text-success mb-2"></i>
+                    <h3 class="text-success">{{ stats.repuestos_diferentes }}</h3>
+                    <p class="text-muted mb-0">Tipos de Repuestos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x text-warning mb-2"></i>
+                    <h3 class="text-warning">{{ stats.clientes_afectados }}</h3>
+                    <p class="text-muted mb-0">Clientes Involucrados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-tools fa-2x text-info mb-2"></i>
+                    <h3 class="text-info">{{ stats.equipos_con_repuestos }}</h3>
+                    <p class="text-muted mb-0">Equipos con Repuestos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico de Tendencia por Mes -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Tendencia de Uso de Repuestos por Mes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTendenciaRepuestos" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Top 10 Repuestos -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy"></i> Top 10 Repuestos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTopRepuestos" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis Detallado -->
+    <div class="row">
+        <!-- Lista de Repuestos -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Repuestos Utilizados
+                        <small class="text-muted">({{ repuestos_mencionados|length }} tipos encontrados)</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if repuestos_mencionados %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="repuestosTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="repuesto">
+                                        <i class="fas fa-sort"></i> Repuesto
+                                    </th>
+                                    <th class="sortable" data-column="frecuencia">
+                                        <i class="fas fa-sort"></i> Frecuencia
+                                    </th>
+                                    <th class="sortable" data-column="clientes">
+                                        <i class="fas fa-sort"></i> Clientes
+                                    </th>
+                                    <th class="sortable" data-column="equipos">
+                                        <i class="fas fa-sort"></i> Equipos
+                                    </th>
+                                    <th>Última Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for repuesto, data in repuestos_mencionados.items() %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ repuesto.title() }}</strong>
+                                        {% if mostrar_detalles %}
+                                        <button class="btn btn-sm btn-outline-info ms-2" 
+                                                onclick="toggleDetalles('{{ repuesto }}')" 
+                                                title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary fs-6">{{ data.frecuencia }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ data.clientes_count }} cliente{{ 's' if data.clientes_count != 1 else '' }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">{{ data.equipos_count }} equipo{{ 's' if data.equipos_count != 1 else '' }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ data.fechas[0] if data.fechas else '-' }}</small>
+                                    </td>
+                                </tr>
+                                {% if mostrar_detalles and data.mantenimientos %}
+                                <tr id="detalles-{{ repuesto }}" style="display: none;">
+                                    <td colspan="5">
+                                        <div class="bg-light p-3 rounded">
+                                            <h6><i class="fas fa-info-circle"></i> Mantenimientos con {{ repuesto.title() }}:</h6>
+                                            {% for mant in data.mantenimientos[:5] %}
+                                            <div class="mb-2">
+                                                <strong>{{ mant.fecha }}</strong> - 
+                                                <span class="badge bg-secondary">{{ mant.cliente }}</span> - 
+                                                <span class="text-primary">{{ mant.equipo }}</span>
+                                                <br><small class="text-muted">{{ mant.descripcion }}</small>
+                                            </div>
+                                            {% endfor %}
+                                            {% if data.mantenimientos|length > 5 %}
+                                            <small class="text-muted">... y {{ data.mantenimientos|length - 5 }} mantenimientos más</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No se encontraron repuestos en los mantenimientos con los filtros aplicados.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen por Cliente -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building"></i> Resumen por Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if repuestos_mencionados %}
+                    <!-- Mostrar estadísticas de clientes que más usan repuestos -->
+                    {% set clientes_repuestos = {} %}
+                    {% for repuesto, data in repuestos_mencionados.items() %}
+                        {% for cliente in data.clientes %}
+                            {% if cliente not in clientes_repuestos %}
+                                {% set _ = clientes_repuestos.update({cliente: 0}) %}
+                            {% endif %}
+                            {% set _ = clientes_repuestos.update({cliente: clientes_repuestos[cliente] + data.frecuencia}) %}
+                        {% endfor %}
+                    {% endfor %}
+
+                    {% for cliente, total in clientes_repuestos.items()[:10] %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><strong>{{ cliente }}</strong></span>
+                        <span class="badge bg-primary">{{ total }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center">No hay datos para mostrar</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Datos para gráficos
+const mesesData = {
+    labels: [{% for mes in meses_ordenados %}'{{ mes }}'{{ ',' if not loop.last }}{% endfor %}],
+    datasets: []
+};
+
+// Preparar datos de tendencia por mes
+const repuestosPorMes = {{ repuestos_por_mes|tojson }};
+const topRepuestosNombres = [{% for repuesto in top_repuestos.keys() %}'{{ repuesto }}'{{ ',' if not loop.last }}{% endfor %}];
+const colores = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d', '#e83e8c', '#fd7e14', '#20c997', '#6f42c1'];
+
+// Crear datasets para cada repuesto top
+topRepuestosNombres.forEach((repuesto, index) => {
+    const data = [];
+    mesesData.labels.forEach(mes => {
+        data.push(repuestosPorMes[mes] && repuestosPorMes[mes][repuesto] ? repuestosPorMes[mes][repuesto] : 0);
+    });
+    
+    mesesData.datasets.push({
+        label: repuesto.charAt(0).toUpperCase() + repuesto.slice(1),
+        data: data,
+        borderColor: colores[index % colores.length],
+        backgroundColor: colores[index % colores.length] + '20',
+        tension: 0.4
+    });
+});
+
+// Top repuestos para gráfico de barras
+const topRepuestosData = {
+    labels: [{% for repuesto in top_repuestos.keys() %}'{{ repuesto.title() }}'{{ ',' if not loop.last }}{% endfor %}],
+    data: [{% for data in top_repuestos.values() %}{{ data.frecuencia }}{{ ',' if not loop.last }}{% endfor %}]
+};
+
+// Inicializar gráficos
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de tendencias
+    new Chart(document.getElementById('chartTendenciaRepuestos'), {
+        type: 'line',
+        data: mesesData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { 
+                    display: true,
+                    position: 'bottom',
+                    labels: { usePointStyle: true }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Gráfico top repuestos
+    new Chart(document.getElementById('chartTopRepuestos'), {
+        type: 'bar',
+        data: {
+            labels: topRepuestosData.labels,
+            datasets: [{
+                data: topRepuestosData.data,
+                backgroundColor: colores.slice(0, topRepuestosData.labels.length)
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { beginAtZero: true },
+                x: { 
+                    ticks: { 
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Función para mostrar/ocultar detalles
+function toggleDetalles(repuesto) {
+    const elemento = document.getElementById('detalles-' + repuesto);
+    if (elemento.style.display === 'none') {
+        elemento.style.display = 'table-row';
+    } else {
+        elemento.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

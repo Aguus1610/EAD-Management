@@ -1,0 +1,70 @@
+{
+  "name": "Sistema de Gestión de Taller",
+  "short_name": "Gestión Taller",
+  "description": "Sistema completo de gestión de taller con IA - Mantenimientos, equipos, clientes y reportes avanzados",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23667eea'/><text x='256' y='330' font-size='280' text-anchor='middle' fill='white'>🔧</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23667eea'/><text x='256' y='330' font-size='280' text-anchor='middle' fill='white'>🔧</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuevo Mantenimiento",
+      "short_name": "Mantenimiento",
+      "description": "Crear un nuevo mantenimiento",
+      "url": "/mantenimientos/nuevo",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23667eea'><path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "short_name": "Reportes",
+      "description": "Ver reportes y análisis",
+      "url": "/reportes",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23667eea'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 768'><rect width='1024' height='768' fill='%23f8f9fa'/><rect x='0' y='0' width='200' height='768' fill='%23667eea'/><rect x='220' y='20' width='784' height='100' fill='%23ffffff' rx='10'/><rect x='220' y='140' width='784' height='200' fill='%23ffffff' rx='10'/><rect x='220' y='360' width='380' height='200' fill='%23ffffff' rx='10'/><rect x='620' y='360' width='384' height='200' fill='%23ffffff' rx='10'/><text x='100' y='400' text-anchor='middle' fill='white' font-size='48'>🔧</text></svg>",
+      "sizes": "1024x768",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Dashboard principal del sistema"
+    }
+  ],
+  "features": [
+    "cross-origin-isolated"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

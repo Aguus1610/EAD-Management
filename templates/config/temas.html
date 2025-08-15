@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Temas - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-palette"></i> Gestión de Temas y Colores</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('configuracion_app') }}">Configuración</a></li>
+            <li class="breadcrumb-item active">Temas y Colores</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Selector de Temas Fijos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-swatchbook me-2"></i>
+                    Seleccionar Tema de la Aplicación
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Elige uno de los 4 temas disponibles para personalizar la apariencia de tu aplicación:</p>
+                
+                <div class="row" id="temas-container">
+                    <!-- Tema Claro -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card theme-card h-100" data-theme="light">
+                            <div class="card-body text-center">
+                                <div class="theme-icon mb-3">
+                                    <span style="font-size: 2.5rem;">☀️</span>
+                                </div>
+                                <h6 class="card-title">Tema Claro</h6>
+                                <p class="card-text small text-muted">Colores claros y brillantes para mayor legibilidad durante el día</p>
+                                
+                                <!-- Vista previa -->
+                                <div class="theme-preview mb-3">
+                                    <div class="color-palette">
+                                        <div class="color-swatch" style="background: #667eea" title="Primario"></div>
+                                        <div class="color-swatch" style="background: #764ba2" title="Secundario"></div>
+                                        <div class="color-swatch" style="background: #ffffff" title="Fondo"></div>
+                                        <div class="color-swatch" style="background: #212529" title="Texto"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary btn-select-theme" data-theme="light">
+                                    <i class="fas fa-check"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tema Oscuro -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card theme-card h-100" data-theme="dark">
+                            <div class="card-body text-center">
+                                <div class="theme-icon mb-3">
+                                    <span style="font-size: 2.5rem;">🌙</span>
+                                </div>
+                                <h6 class="card-title">Tema Oscuro</h6>
+                                <p class="card-text small text-muted">Fondo oscuro que reduce la fatiga visual en ambientes con poca luz</p>
+                                
+                                <!-- Vista previa -->
+                                <div class="theme-preview mb-3">
+                                    <div class="color-palette">
+                                        <div class="color-swatch" style="background: #667eea" title="Primario"></div>
+                                        <div class="color-swatch" style="background: #764ba2" title="Secundario"></div>
+                                        <div class="color-swatch" style="background: #1a1a1a" title="Fondo"></div>
+                                        <div class="color-swatch" style="background: #ffffff" title="Texto"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary btn-select-theme" data-theme="dark">
+                                    <i class="fas fa-check"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tema Corporativo -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card theme-card h-100" data-theme="corporate">
+                            <div class="card-body text-center">
+                                <div class="theme-icon mb-3">
+                                    <span style="font-size: 2.5rem;">💼</span>
+                                </div>
+                                <h6 class="card-title">Tema Corporativo</h6>
+                                <p class="card-text small text-muted">Colores profesionales ideales para entornos empresariales</p>
+                                
+                                <!-- Vista previa -->
+                                <div class="theme-preview mb-3">
+                                    <div class="color-palette">
+                                        <div class="color-swatch" style="background: #3182ce" title="Primario"></div>
+                                        <div class="color-swatch" style="background: #2c5282" title="Secundario"></div>
+                                        <div class="color-swatch" style="background: #f7fafc" title="Fondo"></div>
+                                        <div class="color-swatch" style="background: #2d3748" title="Texto"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary btn-select-theme" data-theme="corporate">
+                                    <i class="fas fa-check"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tema Naturaleza -->
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card theme-card h-100" data-theme="nature">
+                            <div class="card-body text-center">
+                                <div class="theme-icon mb-3">
+                                    <span style="font-size: 2.5rem;">🌿</span>
+                                </div>
+                                <h6 class="card-title">Tema Naturaleza</h6>
+                                <p class="card-text small text-muted">Tonos verdes relajantes inspirados en la naturaleza</p>
+                                
+                                <!-- Vista previa -->
+                                <div class="theme-preview mb-3">
+                                    <div class="color-palette">
+                                        <div class="color-swatch" style="background: #38a169" title="Primario"></div>
+                                        <div class="color-swatch" style="background: #2f855a" title="Secundario"></div>
+                                        <div class="color-swatch" style="background: #f0fff4" title="Fondo"></div>
+                                        <div class="color-swatch" style="background: #1a202c" title="Texto"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-outline-primary btn-select-theme" data-theme="nature">
+                                    <i class="fas fa-check"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Tema Actual:</strong> <span id="current-theme-name">Cargando...</span>
+                    <br><small>Los cambios se aplicarán inmediatamente y se guardarán automáticamente.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Editor de Colores para Temas -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>
+                    Personalizar Colores del Tema Actual
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Funcionalidad Avanzada:</strong> Aquí puedes modificar los colores específicos del tema seleccionado.
+                    Los cambios se aplicarán en tiempo real.
+                </div>
+                
+                <form id="theme-editor-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Colores Principales</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Color Primario</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="color-primary" value="#667eea">
+                                    <input type="text" class="form-control" id="color-primary-text" value="#667eea" readonly>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Color Secundario</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="color-secondary" value="#764ba2">
+                                    <input type="text" class="form-control" id="color-secondary-text" value="#764ba2" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Colores de Fondo</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Fondo Principal</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="bg-body" value="#ffffff">
+                                    <input type="text" class="form-control" id="bg-body-text" value="#ffffff" readonly>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fondo de Tarjetas</label>
+                                <div class="input-group">
+                                    <input type="color" class="form-control form-control-color" id="bg-card" value="#ffffff">
+                                    <input type="text" class="form-control" id="bg-card-text" value="#ffffff" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="button" class="btn btn-success" id="apply-colors">
+                            <i class="fas fa-check"></i> Aplicar Cambios
+                        </button>
+                        <button type="button" class="btn btn-warning" id="reset-colors">
+                            <i class="fas fa-undo"></i> Restaurar Original
+                        </button>
+                        <button type="button" class="btn btn-info" id="preview-colors">
+                            <i class="fas fa-eye"></i> Vista Previa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.theme-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.theme-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.theme-card.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+}
+
+.color-palette {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.theme-icon {
+    font-size: 2.5rem;
+}
+
+.btn-select-theme.active {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+#theme-editor-form .form-control-color {
+    width: 50px;
+    height: 38px;
+    border: none;
+    padding: 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const themeCards = document.querySelectorAll('.theme-card');
+    const currentThemeSpan = document.getElementById('current-theme-name');
+    
+    // Obtener tema actual
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    updateCurrentThemeDisplay(currentTheme);
+    markActiveTheme(currentTheme);
+    
+    // Configurar selectores de tema
+    document.querySelectorAll('.btn-select-theme').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const theme = this.getAttribute('data-theme');
+            selectTheme(theme);
+        });
+    });
+    
+    // Configurar editor de colores
+    setupColorEditor();
+    
+    function selectTheme(theme) {
+        // Aplicar tema usando el ThemeManager
+        if (window.themeManager) {
+            window.themeManager.setTheme(theme);
+        } else {
+            // Fallback
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+        
+        // Actualizar UI
+        updateCurrentThemeDisplay(theme);
+        markActiveTheme(theme);
+        loadThemeColors(theme);
+        
+        // Mostrar confirmación
+        if (window.notificationSystem) {
+            window.notificationSystem.success(`Tema cambiado a: ${getThemeName(theme)}`);
+        }
+    }
+    
+    function markActiveTheme(theme) {
+        // Remover clase activa de todas las tarjetas
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        
+        // Marcar como activos los botones correspondientes
+        document.querySelectorAll('.btn-select-theme').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-theme') === theme) {
+                btn.classList.add('active');
+                btn.closest('.theme-card').classList.add('active');
+            }
+        });
+    }
+    
+    function updateCurrentThemeDisplay(theme) {
+        const themeName = getThemeName(theme);
+        currentThemeSpan.textContent = themeName;
+    }
+    
+    function getThemeName(theme) {
+        const names = {
+            light: 'Claro ☀️',
+            dark: 'Oscuro 🌙',
+            corporate: 'Corporativo 💼',
+            nature: 'Naturaleza 🌿'
+        };
+        return names[theme] || 'Desconocido';
+    }
+    
+    function loadThemeColors(theme) {
+        const themeColors = {
+            light: {
+                primary: '#667eea',
+                secondary: '#764ba2',
+                bgBody: '#ffffff',
+                bgCard: '#ffffff'
+            },
+            dark: {
+                primary: '#667eea',
+                secondary: '#764ba2',
+                bgBody: '#1a1a1a',
+                bgCard: '#2d2d2d'
+            },
+            corporate: {
+                primary: '#3182ce',
+                secondary: '#2c5282',
+                bgBody: '#f7fafc',
+                bgCard: '#ffffff'
+            },
+            nature: {
+                primary: '#38a169',
+                secondary: '#2f855a',
+                bgBody: '#f0fff4',
+                bgCard: '#ffffff'
+            }
+        };
+        
+        const colors = themeColors[theme] || themeColors.light;
+        
+        document.getElementById('color-primary').value = colors.primary;
+        document.getElementById('color-primary-text').value = colors.primary;
+        document.getElementById('color-secondary').value = colors.secondary;
+        document.getElementById('color-secondary-text').value = colors.secondary;
+        document.getElementById('bg-body').value = colors.bgBody;
+        document.getElementById('bg-body-text').value = colors.bgBody;
+        document.getElementById('bg-card').value = colors.bgCard;
+        document.getElementById('bg-card-text').value = colors.bgCard;
+    }
+    
+    function setupColorEditor() {
+        // Sincronizar color picker con texto
+        const colorInputs = [
+            'color-primary',
+            'color-secondary', 
+            'bg-body',
+            'bg-card'
+        ];
+        
+        colorInputs.forEach(id => {
+            const colorInput = document.getElementById(id);
+            const textInput = document.getElementById(id + '-text');
+            
+            colorInput.addEventListener('change', function() {
+                textInput.value = this.value;
+            });
+        });
+        
+        // Botón aplicar cambios
+        document.getElementById('apply-colors').addEventListener('click', function() {
+            applyCustomColors();
+        });
+        
+        // Botón restaurar
+        document.getElementById('reset-colors').addEventListener('click', function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            loadThemeColors(currentTheme);
+            applyCustomColors();
+        });
+        
+        // Botón vista previa
+        document.getElementById('preview-colors').addEventListener('click', function() {
+            applyCustomColors();
+            if (window.notificationSystem) {
+                window.notificationSystem.info('Vista previa aplicada. Haz clic en "Aplicar Cambios" para guardar.');
+            }
+        });
+    }
+    
+    function applyCustomColors() {
+        const root = document.documentElement;
+        
+        root.style.setProperty('--color-primary', document.getElementById('color-primary').value);
+        root.style.setProperty('--color-secondary', document.getElementById('color-secondary').value);
+        root.style.setProperty('--bg-body', document.getElementById('bg-body').value);
+        root.style.setProperty('--bg-card', document.getElementById('bg-card').value);
+        
+        if (window.notificationSystem) {
+            window.notificationSystem.success('Colores personalizados aplicados');
+        }
+    }
+    
+    // Cargar colores del tema actual al inicio
+    loadThemeColors(currentTheme);
+});
+</script>
+{% endblock %}

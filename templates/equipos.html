@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Equipos - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-cogs"></i> Gestión de Equipos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('nuevo_equipo') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Equipo
+            </a>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportPDF('equipos')">
+                    <i class="fas fa-file-pdf"></i> Reporte PDF
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="window.print()">
+                    <i class="fas fa-print"></i> Imprimir
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros de búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="busqueda" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                       placeholder="Nombre, marca, modelo, serie, cliente..." 
+                       value="{{ busqueda or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select class="form-select" id="cliente_id" name="cliente_id">
+                    <option value="">Todos los clientes</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if cliente_id_filtro == cliente.id|string %}selected{% endif %}>
+                        {{ cliente.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    {% for estado in estados %}
+                    <option value="{{ estado.estado }}" {% if estado_filtro == estado.estado %}selected{% endif %}>
+                        {{ estado.estado }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        {% if busqueda or cliente_id_filtro or estado_filtro %}
+        <div class="mt-3">
+            <small class="text-muted">
+                Filtros activos: 
+                {% if busqueda %}<span class="badge bg-info me-1">Texto: "{{ busqueda }}"</span>{% endif %}
+                {% if cliente_id_filtro %}
+                    <span class="badge bg-warning me-1">
+                        Cliente: {{ clientes|selectattr('id', 'equalto', cliente_id_filtro|int)|map(attribute='nombre')|first }}
+                    </span>
+                {% endif %}
+                {% if estado_filtro %}<span class="badge bg-success me-1">Estado: {{ estado_filtro }}</span>{% endif %}
+            </small>
+            <a href="{{ url_for('equipos') }}" class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="fas fa-times"></i> Limpiar filtros
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if equipos %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-muted mb-0">
+                    {{ equipos|length }} equipo{{ 's' if equipos|length != 1 else '' }} encontrado{{ 's' if equipos|length != 1 else '' }}
+                </h6>
+                <small class="text-muted">
+                    Ordenado por cliente y nombre
+                </small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" id="equiposTable">
+                                            <thead class="table-light">
+                            <tr>
+                                <th class="sortable" data-column="nombre">
+                                    <i class="fas fa-sort"></i> Nombre
+                                </th>
+                                <th class="sortable" data-column="cliente">
+                                    <i class="fas fa-sort"></i> Cliente
+                                </th>
+                                <th class="sortable" data-column="marca">
+                                    <i class="fas fa-sort"></i> Marca
+                                </th>
+                                <th class="sortable" data-column="modelo">
+                                    <i class="fas fa-sort"></i> Modelo
+                                </th>
+                                <th class="sortable" data-column="estado">
+                                    <i class="fas fa-sort"></i> Estado
+                                </th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                        {% for equipo in equipos %}
+                        <tr>
+                            <td><strong>{{ equipo.nombre }}</strong></td>
+                            <td>
+                                {% if equipo.cliente_nombre %}
+                                    <span class="badge bg-info">{{ equipo.cliente_nombre }}</span>
+                                {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipo.marca or '-' }}</td>
+                            <td>{{ equipo.modelo or '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if equipo.estado == 'Activo' else 'secondary' }}">
+                                    {{ equipo.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('editar_equipo', id=equipo.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Editar equipo">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger eliminar-equipo" 
+                                            data-id="{{ equipo.id }}"
+                                            data-nombre="{{ equipo.nombre }}"
+                                            data-cliente="{{ equipo.cliente_nombre or '' }}"
+                                            title="Eliminar equipo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay equipos registrados</h5>
+                <p class="text-muted">Comienza agregando tu primer equipo o importa datos desde Excel.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('nuevo_equipo') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-plus"></i> Agregar Equipo
+                    </a>
+                    <a href="{{ url_for('importar_excel') }}" class="btn btn-outline-success">
+                        <i class="fas fa-file-excel"></i> Importar desde Excel
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="eliminarEquipoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación de Equipo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de que quieres eliminar este equipo?</strong></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning"></i> Esta acción no se puede deshacer.
+                    <br><strong>Equipo:</strong> <span id="equipoInfo"></span>
+                    <br><strong>Cliente:</strong> <span id="clienteInfo"></span>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Nota:</strong> Si el equipo tiene mantenimientos asociados, no podrá eliminarse. 
+                    Deberás eliminar primero todos los mantenimientos del equipo.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form id="formEliminarEquipo" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Event listeners usando delegación de eventos
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar clics en botones de eliminar equipo
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.eliminar-equipo')) {
+            const button = e.target.closest('.eliminar-equipo');
+            const id = button.dataset.id;
+            const nombre = button.dataset.nombre;
+            const cliente = button.dataset.cliente;
+            
+            confirmarEliminacionEquipo(id, nombre, cliente);
+        }
+    });
+});
+
+function confirmarEliminacionEquipo(id, nombre, cliente) {
+    // Actualizar información en el modal
+    document.getElementById('equipoInfo').textContent = nombre;
+    document.getElementById('clienteInfo').textContent = cliente || 'Sin asignar';
+    document.getElementById('formEliminarEquipo').action = `/equipos/${id}/eliminar`;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('eliminarEquipoModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

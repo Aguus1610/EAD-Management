@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes Avanzados - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado y Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1><i class="fas fa-chart-line"></i> Reportes Avanzados</h1>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="exportarReporte()">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Panel de Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i> Filtros de Análisis
+                        <button class="btn btn-sm btn-outline-primary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosPanel">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </h5>
+                </div>
+                <div class="collapse show" id="filtrosPanel">
+                    <div class="card-body">
+                        <form id="filtrosForm" method="GET">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label">Fecha Inicio</label>
+                                    <input type="date" class="form-control" name="fecha_inicio" value="{{ fecha_inicio }}" id="fechaInicio">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Fecha Fin</label>
+                                    <input type="date" class="form-control" name="fecha_fin" value="{{ fecha_fin }}" id="fechaFin">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Período de Agrupación</label>
+                                    <select class="form-control" name="periodo" id="periodo">
+                                        <option value="dia" {% if periodo == 'dia' %}selected{% endif %}>Por Días</option>
+                                        <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Por Semanas</option>
+                                        <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Por Meses</option>
+                                        <option value="año" {% if periodo == 'año' %}selected{% endif %}>Por Años</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Cliente Específico</label>
+                                    <select class="form-control" name="cliente_id" id="clienteId">
+                                        <option value="">Todos los clientes</option>
+                                        {% for cliente in clientes_lista %}
+                                        <option value="{{ cliente.id }}" {% if cliente_id == cliente.id|string %}selected{% endif %}>
+                                            {{ cliente.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Aplicar Filtros
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning" onclick="aplicarFiltroRapido('ultimo_mes')">
+                                        <i class="fas fa-calendar-alt"></i> Último Mes
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning" onclick="aplicarFiltroRapido('ultimo_trimestre')">
+                                        <i class="fas fa-calendar-alt"></i> Último Trimestre
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning" onclick="aplicarFiltroRapido('ultimo_año')">
+                                        <i class="fas fa-calendar-alt"></i> Último Año
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Filtros Aplicados -->
+    {% if fecha_inicio or fecha_fin or cliente_id %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i> <strong>Filtros Aplicados:</strong>
+        {% if fecha_inicio %}Desde: {{ fecha_inicio }}{% endif %}
+        {% if fecha_fin %}Hasta: {{ fecha_fin }}{% endif %}
+        {% if cliente_id %}Cliente: {{ clientes_lista|selectattr('id', 'equalto', cliente_id|int)|map(attribute='nombre')|first }}{% endif %}
+        - Mostrando {{ stats.total_mantenimientos }} mantenimientos
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h3 class="text-primary">{{ stats.total_clientes }}</h3>
+                    <p class="text-muted mb-0">Total Clientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-cogs fa-2x text-success mb-2"></i>
+                    <h3 class="text-success">{{ stats.total_equipos }}</h3>
+                    <p class="text-muted mb-0">Total Equipos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-wrench fa-2x text-warning mb-2"></i>
+                    <h3 class="text-warning">{{ stats.total_mantenimientos }}</h3>
+                    <p class="text-muted mb-0">
+                        {% if fecha_inicio or fecha_fin %}Mantenimientos (Filtrado){% else %}Total Mantenimientos{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-calendar-check fa-2x text-info mb-2"></i>
+                    <h3 class="text-info">{{ stats.mantenimientos_mes }}</h3>
+                    <p class="text-muted mb-0">Este Mes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos Principales -->
+    <div class="row mb-4">
+        <!-- Gráfico de Tendencias por Período -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Tendencia de Mantenimientos por {{ titulo_periodo }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTendencias" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Gráfico de Actividad por Día de la Semana -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-week"></i> Actividad por Día
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartActividad" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Análisis Detallado -->
+    <div class="row mb-4">
+        <!-- Clientes Más Activos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy"></i> Clientes Más Activos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if clientes_activos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Mantenimientos</th>
+                                    <th>Equipos</th>
+                                    <th>Progreso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes_activos %}
+                                <tr>
+                                    <td><strong>{{ cliente.nombre }}</strong></td>
+                                    <td><span class="badge bg-primary">{{ cliente.total_mantenimientos }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ cliente.equipos }}</span></td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar" style="width: {{ (cliente.total_mantenimientos / clientes_activos[0].total_mantenimientos * 100)|round }}%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay datos para mostrar con los filtros aplicados.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Equipos por Cliente -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building"></i> Distribución de Equipos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if equipos_por_cliente %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Equipos</th>
+                                    {% if fecha_inicio or fecha_fin %}<th>Mant. Período</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in equipos_por_cliente %}
+                                <tr>
+                                    <td><strong>{{ item.nombre }}</strong></td>
+                                    <td><span class="badge bg-info">{{ item.total_equipos }}</span></td>
+                                    {% if fecha_inicio or fecha_fin %}
+                                    <td><span class="badge bg-warning">{{ item.mantenimientos_periodo or 0 }}</span></td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay datos para mostrar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mantenimientos Recientes -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-history"></i> Mantenimientos Recientes
+                {% if fecha_inicio or fecha_fin %}<small class="text-muted">(Filtrados)</small>{% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if mantenimientos_recientes %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="mantenimientosRecientesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="fecha_mantenimiento">
+                                <i class="fas fa-sort"></i> Fecha
+                            </th>
+                            <th class="sortable" data-column="cliente_nombre">
+                                <i class="fas fa-sort"></i> Cliente
+                            </th>
+                            <th class="sortable" data-column="equipo_nombre">
+                                <i class="fas fa-sort"></i> Equipo
+                            </th>
+                            <th class="sortable" data-column="tipo_mantenimiento">
+                                <i class="fas fa-sort"></i> Tipo
+                            </th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mant in mantenimientos_recientes %}
+                        <tr>
+                            <td>{{ mant.fecha_mantenimiento }}</td>
+                            <td><span class="badge bg-info">{{ mant.cliente_nombre }}</span></td>
+                            <td><strong>{{ mant.equipo_nombre }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if mant.tipo_mantenimiento == 'Preventivo' else 'danger' }}">
+                                    {{ mant.tipo_mantenimiento }}
+                                </span>
+                            </td>
+                            <td>{{ mant.descripcion[:80] }}{% if mant.descripcion|length > 80 %}...{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No se encontraron mantenimientos con los filtros aplicados.</p>
+                <button class="btn btn-outline-primary" onclick="limpiarFiltros()">
+                    <i class="fas fa-eraser"></i> Limpiar Filtros
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Configuración de colores para gráficos
+const colores = {
+    primary: '#007bff',
+    success: '#28a745',
+    warning: '#ffc107',
+    danger: '#dc3545',
+    info: '#17a2b8',
+    secondary: '#6c757d'
+};
+
+// Datos para los gráficos (pasados desde el backend)
+const datosTendencias = {
+    labels: [{% for item in mantenimientos_por_periodo %}'{{ item.periodo }}'{{ ',' if not loop.last }}{% endfor %}],
+    data: [{% for item in mantenimientos_por_periodo %}{{ item.total }}{{ ',' if not loop.last }}{% endfor %}]
+};
+
+const datosActividad = {
+    labels: [{% for item in actividad_por_dia %}'{{ item.dia_semana }}'{{ ',' if not loop.last }}{% endfor %}],
+    data: [{% for item in actividad_por_dia %}{{ item.total }}{{ ',' if not loop.last }}{% endfor %}]
+};
+
+
+
+// Inicializar gráficos cuando la página esté lista
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarGraficos();
+});
+
+function inicializarGraficos() {
+    // Gráfico de Tendencias
+    new Chart(document.getElementById('chartTendencias'), {
+        type: 'line',
+        data: {
+            labels: datosTendencias.labels.reverse(),
+            datasets: [{
+                label: 'Mantenimientos',
+                data: datosTendencias.data.reverse(),
+                borderColor: colores.primary,
+                backgroundColor: colores.primary + '20',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Gráfico de Actividad por Día
+    new Chart(document.getElementById('chartActividad'), {
+        type: 'bar',
+        data: {
+            labels: datosActividad.labels,
+            datasets: [{
+                data: datosActividad.data,
+                backgroundColor: [
+                    colores.danger + '80',
+                    colores.primary + '80',
+                    colores.success + '80',
+                    colores.warning + '80',
+                    colores.info + '80',
+                    colores.secondary + '80',
+                    colores.primary + '80'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+
+}
+
+// Funciones auxiliares para filtros
+function aplicarFiltroRapido(tipo) {
+    const hoy = new Date();
+    let fechaInicio = new Date();
+    
+    switch(tipo) {
+        case 'ultimo_mes':
+            fechaInicio.setMonth(hoy.getMonth() - 1);
+            break;
+        case 'ultimo_trimestre':
+            fechaInicio.setMonth(hoy.getMonth() - 3);
+            break;
+        case 'ultimo_año':
+            fechaInicio.setFullYear(hoy.getFullYear() - 1);
+            break;
+    }
+    
+    document.getElementById('fechaInicio').value = fechaInicio.toISOString().split('T')[0];
+    document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+    document.getElementById('filtrosForm').submit();
+}
+
+function limpiarFiltros() {
+    window.location.href = window.location.pathname;
+}
+
+function exportarReporte() {
+    // Exportar a PDF
+    window.open('/api/export/pdf/dashboard', '_blank');
+    showSuccess('Generando reporte avanzado PDF...');
+}
+</script>
+{% endblock %}

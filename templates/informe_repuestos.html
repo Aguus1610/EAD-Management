@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Informe de Repuestos - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-chart-line"></i> Análisis de Repuestos Utilizados</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left"></i> Volver a Reportes
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Estadísticas generales -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clipboard-list fa-2x text-primary mb-2"></i>
+                <h3 class="text-primary">{{ total_mantenimientos }}</h3>
+                <p class="text-muted mb-0">Mantenimientos Analizados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-boxes fa-2x text-success mb-2"></i>
+                <h3 class="text-success">{{ repuestos_ordenados|length }}</h3>
+                <p class="text-muted mb-0">Tipos de Repuestos Detectados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                <h3 class="text-warning">{{ trabajos_ordenados|length }}</h3>
+                <p class="text-muted mb-0">Tipos de Trabajos Identificados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis de repuestos más utilizados -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy"></i> Repuestos Más Utilizados
+                </h5>
+                <small class="text-muted">Basado en análisis de descripciones de mantenimientos</small>
+            </div>
+            <div class="card-body">
+                {% if repuestos_ordenados %}
+                    {% for repuesto, data in repuestos_ordenados[:10] %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                        <div>
+                            <h6 class="mb-1 text-capitalize">{{ repuesto }}</h6>
+                            <small class="text-muted">
+                                {{ data.clientes|length }} cliente{{ 's' if data.clientes|length != 1 else '' }}, 
+                                {{ data.equipos|length }} equipo{{ 's' if data.equipos|length != 1 else '' }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary fs-6">{{ data.count }}</span>
+                            <div class="progress mt-1" style="width: 80px; height: 6px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     data-width="{{ ((data.count / repuestos_ordenados[0][1].count * 100) if repuestos_ordenados else 0)|round(1) }}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No se encontraron datos de repuestos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-wrench"></i> Trabajos Más Frecuentes
+                </h5>
+                <small class="text-muted">Análisis de mano de obra por frecuencia</small>
+            </div>
+            <div class="card-body">
+                {% if trabajos_ordenados %}
+                    {% for trabajo, data in trabajos_ordenados[:10] %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                        <div>
+                            <h6 class="mb-1 text-capitalize">{{ trabajo }}</h6>
+                            <small class="text-muted">
+                                {{ data.clientes|length }} cliente{{ 's' if data.clientes|length != 1 else '' }}, 
+                                {{ data.equipos|length }} equipo{{ 's' if data.equipos|length != 1 else '' }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success fs-6">{{ data.count }}</span>
+                            <div class="progress mt-1" style="width: 80px; height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     data-width="{{ ((data.count / trabajos_ordenados[0][1].count * 100) if trabajos_ordenados else 0)|round(1) }}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No se encontraron datos de trabajos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis por cliente -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> Análisis por Cliente
+                </h5>
+                <small class="text-muted">Consumo de repuestos y trabajos por cliente</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cliente</th>
+                                <th class="text-center">Repuestos Usados</th>
+                                <th class="text-center">Tipos Diferentes</th>
+                                <th class="text-center">Trabajos Realizados</th>
+                                <th class="text-center">Tipos de Trabajo</th>
+                                <th>Repuestos Principales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente, data_repuestos in repuestos_por_cliente.items() %}
+                            {% set data_trabajos = trabajos_por_cliente.get(cliente, {}) %}
+                            <tr>
+                                <td><strong>{{ cliente }}</strong></td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">{{ data_repuestos.total }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ data_repuestos.tipos_count }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success">{{ data_trabajos.total or 0 }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning">{{ data_trabajos.tipos_count or 0 }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% for tipo in data_repuestos.tipos[:3] %}
+                                            <span class="badge bg-light text-dark me-1">{{ tipo }}</span>
+                                        {% endfor %}
+                                        {% if data_repuestos.tipos|length > 3 %}
+                                            <span class="text-muted">+{{ data_repuestos.tipos|length - 3 }} más</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recomendaciones -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb"></i> Recomendaciones de Inventario
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-star text-warning"></i> Repuestos Críticos para Stock:</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for repuesto, data in repuestos_ordenados[:5] %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-capitalize">{{ repuesto }}</span>
+                                <span class="badge bg-danger">{{ data.count }} usos</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chart-bar text-success"></i> Análisis de Demanda:</h6>
+                        <div class="alert alert-light">
+                            <ul class="mb-0">
+                                <li><strong>Repuesto más demandado:</strong> 
+                                    {% if repuestos_ordenados %}
+                                        {{ repuestos_ordenados[0][0] }} ({{ repuestos_ordenados[0][1].count }} usos)
+                                    {% else %}
+                                        No hay datos
+                                    {% endif %}
+                                </li>
+                                <li><strong>Trabajo más frecuente:</strong> 
+                                    {% if trabajos_ordenados %}
+                                        {{ trabajos_ordenados[0][0] }} ({{ trabajos_ordenados[0][1].count }} veces)
+                                    {% else %}
+                                        No hay datos
+                                    {% endif %}
+                                </li>
+                                <li><strong>Cliente con más variedad:</strong> 
+                                    {% set cliente_max = repuestos_por_cliente.items()|sort(attribute='1.tipos_count', reverse=true)|first %}
+                                    {% if cliente_max %}
+                                        {{ cliente_max[0] }} ({{ cliente_max[1].tipos_count }} tipos)
+                                    {% else %}
+                                        No hay datos
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Inicializar barras de progreso
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+});
+</script>
+
+<style media="print">
+    .btn, .btn-toolbar { display: none !important; }
+    .sidebar { display: none !important; }
+    .container-fluid { margin: 0 !important; padding: 0 !important; }
+    main { margin: 0 !important; }
+    .card { break-inside: avoid; }
+    @page { margin: 1cm; }
+</style>
+
+{% endblock %}

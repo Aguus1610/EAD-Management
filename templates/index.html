@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-tachometer-alt"></i> Panel de Control</h1>
+</div>
+
+<!-- Tarjetas de estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Equipos</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_equipos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-cogs fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Equipos Activos</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ equipos_activos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Mantenimientos</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_mantenimientos }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-wrench fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Clientes</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clientes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equipos recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-clock"></i> Equipos Agregados Recientemente</h5>
+            </div>
+            <div class="card-body">
+                {% if equipos_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="equiposRecientesTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-column="nombre">
+                                        <i class="fas fa-sort"></i> Nombre
+                                    </th>
+                                    <th class="sortable" data-column="cliente">
+                                        <i class="fas fa-sort"></i> Cliente
+                                    </th>
+                                    <th class="sortable" data-column="marca">
+                                        <i class="fas fa-sort"></i> Marca
+                                    </th>
+                                    <th class="sortable" data-column="estado">
+                                        <i class="fas fa-sort"></i> Estado
+                                    </th>
+                                    <th class="sortable" data-column="ubicacion">
+                                        <i class="fas fa-sort"></i> Ubicación
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for equipo in equipos_recientes %}
+                                <tr>
+                                    <td><strong>{{ equipo.nombre }}</strong></td>
+                                    <td>
+                                        {% if equipo.cliente_nombre %}
+                                            <span class="badge bg-info">{{ equipo.cliente_nombre }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ equipo.marca or '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if equipo.estado == 'Activo' else 'secondary' }}">
+                                            {{ equipo.estado }}
+                                        </span>
+                                    </td>
+                                    <td>{{ equipo.ubicacion or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('equipos') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> Ver Todos los Equipos
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay equipos registrados aún.</p>
+                        <a href="{{ url_for('nuevo_equipo') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Agregar Primer Equipo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Mantenimiento - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-plus-circle"></i> Registrar Nuevo Mantenimiento</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('mantenimientos') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                {% if not equipos %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5 class="text-warning">No hay equipos disponibles</h5>
+                        <p class="text-muted">Necesitas tener al menos un equipo activo para registrar un mantenimiento.</p>
+                        <a href="{{ url_for('nuevo_equipo') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Agregar Equipo
+                        </a>
+                    </div>
+                {% else %}
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="equipo_id" class="form-label">Equipo *</label>
+                                <select class="form-select" id="equipo_id" name="equipo_id" required>
+                                    <option value="">Selecciona un equipo</option>
+                                    {% for equipo in equipos %}
+                                    <option value="{{ equipo.id }}">{{ equipo.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_mantenimiento" class="form-label">Tipo de Mantenimiento *</label>
+                                <select class="form-select" id="tipo_mantenimiento" name="tipo_mantenimiento" required>
+                                    <option value="">Selecciona el tipo</option>
+                                    <option value="Preventivo">Preventivo</option>
+                                    <option value="Correctivo">Correctivo</option>
+                                    <option value="Predictivo">Predictivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha_mantenimiento" class="form-label">Fecha de Mantenimiento *</label>
+                                <input type="date" class="form-control" id="fecha_mantenimiento" name="fecha_mantenimiento" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tecnico" class="form-label">Técnico Responsable</label>
+                                <input type="text" class="form-control" id="tecnico" name="tecnico" placeholder="Nombre del técnico">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="costo" class="form-label">Costo (opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" id="costo" name="costo" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción del Mantenimiento</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="4" placeholder="Describe las actividades realizadas, partes reemplazadas, observaciones, etc."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('mantenimientos') }}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Registrar Mantenimiento
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if equipos %}
+<script>
+    // Establecer la fecha de hoy como valor por defecto
+    document.getElementById('fecha_mantenimiento').valueAsDate = new Date();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Sistema completo de gestión de taller con IA - Mantenimientos, equipos, clientes y reportes avanzados">
+    <meta name="author" content="Sistema de Gestión de Taller">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gestión Taller">
+    
+    <title>{% block title %}Gestión de Taller{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- External CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS con Sistema de Temas -->
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/responsive-improvements.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/notifications.css') }}" rel="stylesheet">
+    
+    <!-- Chart.js para gráficos avanzados -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Sobrescribir font-family */
+        body, .sidebar {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+        
+        /* Layout principal ya definido en themes.css */
+        
+        /* Animaciones de página */
+        .page-content {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: pageLoad 0.6s ease-out forwards;
+        }
+        
+        @keyframes pageLoad {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mejoras del header */
+        .page-header {
+            background: var(--bg-accent);
+            color: var(--text-light);
+            margin: -2rem -2rem 2rem -2rem;
+            padding: 2rem;
+            border-radius: 0 0 20px 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .page-header h1 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-header .breadcrumb {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            margin-top: 10px;
+        }
+        
+        .page-header .breadcrumb-item a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+        
+        .page-header .breadcrumb-item.active {
+            color: rgba(255,255,255,0.9);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Mobile Header con botón hamburguesa -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-lg-none fixed-top">
+        <div class="container-fluid">
+            <button class="navbar-toggler border-0" type="button" id="sidebarToggle" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand mx-auto" href="{{ url_for('index') }}">
+                <i class="fas fa-tools"></i> Mi Taller
+            </a>
+            {% if g.user %}
+            <div class="dropdown">
+                <button class="btn btn-link text-light p-0 border-0" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle fa-lg"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ url_for('cambiar_password') }}">
+                        <i class="fas fa-key"></i> Cambiar Contraseña
+                    </a></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Overlay para cerrar sidebar en móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white"><i class="fas fa-tools"></i> Mi Taller</h4>
+                        {% if g.user %}
+                        <div class="user-info mt-3 p-2" style="background: rgba(255,255,255,0.1); border-radius: 10px;">
+                            <div class="text-white">
+                                <small class="d-block opacity-75">Bienvenido,</small>
+                                <strong>{{ g.user.nombre_completo if g.user else 'Usuario' }}</strong>
+                                <small class="d-block text-capitalize">
+                                    <i class="fas fa-user-tag me-1"></i>{{ g.user.rol if g.user else 'Invitado' }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                                <i class="fas fa-home"></i> Inicio
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['clientes', 'nuevo_cliente', 'editar_cliente', 'ver_cliente'] %}active{% endif %}" href="{{ url_for('clientes') }}">
+                                <i class="fas fa-users"></i> Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['equipos', 'nuevo_equipo', 'editar_equipo'] %}active{% endif %}" href="{{ url_for('equipos') }}">
+                                <i class="fas fa-cogs"></i> Equipos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['mantenimientos', 'nuevo_mantenimiento'] %}active{% endif %}" href="{{ url_for('mantenimientos') }}">
+                                <i class="fas fa-wrench"></i> Mantenimientos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['repuestos', 'nuevo_repuesto'] %}active{% endif %}" href="{{ url_for('repuestos') }}">
+                                <i class="fas fa-boxes"></i> Repuestos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'importar_excel' %}active{% endif %}" href="{{ url_for('importar_excel') }}">
+                                <i class="fas fa-file-excel"></i> Importar Excel
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if request.endpoint in ['reportes', 'reportes_avanzados', 'informe_repuestos', 'informe_mano_obra', 'informe_repuestos_inteligente', 'gestion_categorias', 'test_export_page'] %}active{% endif %}" 
+                               href="#" id="reportesDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-chart-bar"></i> Reportes
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('reportes') }}">
+                                    <i class="fas fa-chart-pie"></i> Reportes Básicos
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('reportes_avanzados') }}">
+                                    <i class="fas fa-chart-line"></i> Reportes Avanzados
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('informe_repuestos') }}">
+                                    <i class="fas fa-boxes"></i> Análisis Repuestos
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('informe_mano_obra') }}">
+                                    <i class="fas fa-user-cog"></i> Análisis Mano de Obra
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('informe_repuestos_inteligente') }}">
+                                    <i class="fas fa-brain"></i> Análisis Inteligente
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('gestion_categorias') }}">
+                                    <i class="fas fa-cogs"></i> Gestionar Categorías
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('test_export_page') }}">
+                                    <i class="fas fa-flask"></i> Test Exportación
+                                </a></li>
+                            </ul>
+                        </li>
+                        
+                        {% if g.user and g.user.permisos and (g.user.permisos.get('all') or g.user.rol in ['admin', 'gerente']) %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'automatizacion' in request.endpoint %}active{% endif %}" href="{{ url_for('automatizacion') }}">
+                                <i class="fas fa-robot"></i> Automatización
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if g.user and g.user.permisos and (g.user.permisos.get('all') or g.user.rol == 'admin') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle {% if 'configuracion' in request.endpoint %}active{% endif %}" 
+                               href="#" id="configDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-cog"></i> Configuración
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('configuracion_app') }}">
+                                    <i class="fas fa-tachometer-alt"></i> Panel General
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('configuracion_general') }}">
+                                    <i class="fas fa-building"></i> Información Empresa
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('configuracion_temas') }}">
+                                    <i class="fas fa-palette"></i> Temas y Colores
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('iot_dashboard') }}">
+                                    <i class="fas fa-wifi"></i> IoT y Sensores
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('ml_dashboard') }}">
+                                    <i class="fas fa-brain"></i> Machine Learning
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('apis_dashboard') }}">
+                                    <i class="fas fa-plug"></i> APIs Externas
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="nav-item mt-3">
+                            <hr class="border-light">
+                        </li>
+                        {% if g.user %}
+                        <!-- Menú de Usuario -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-cog"></i> Mi Cuenta
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('cambiar_password') }}">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                </a></li>
+                                {% if g.user and g.user.permisos and (g.user.permisos.get('all') or g.user.rol == 'admin') %}
+                                <li><a class="dropdown-item" href="{{ url_for('gestionar_usuarios') }}">
+                                    <i class="fas fa-users"></i> Gestionar Usuarios
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auditoria') }}">
+                                    <i class="fas fa-history"></i> Auditoría
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                        
+                        {% if g.user and (g.user.permisos.get('all') or g.user.rol == 'admin') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'reiniciar_app' %}active{% endif %}" href="{{ url_for('reiniciar_app') }}" style="color: #ff6b6b;">
+                                <i class="fas fa-refresh"></i> Reiniciar App
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+        <div class="page-content">
+            <!-- Flash Messages Mejorados -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Modales Personalizados -->
+    <!-- Estilos para asegurar visibilidad de modales -->
+    <style>
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal {
+            z-index: 1050 !important;
+        }
+        .modal-dialog {
+            margin: 1.75rem auto;
+        }
+        .modal-content {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            border-bottom: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+        }
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            border-radius: 0 0 10px 10px;
+        }
+    </style>
+    
+    <!-- Modal de Confirmación -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmacionLabel">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Confirmar Acción
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmacionMensaje">¿Está seguro de que desea realizar esta acción?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmarAccion">
+                        <i class="fas fa-check"></i> Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Información -->
+    <div class="modal fade" id="modalInformacion" tabindex="-1" aria-labelledby="modalInformacionLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalInformacionLabel">
+                        <i class="fas fa-info-circle text-info"></i>
+                        Información
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="informacionMensaje">Información del sistema</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check"></i> Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Error -->
+    <div class="modal fade" id="modalError" tabindex="-1" aria-labelledby="modalErrorLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalErrorLabel">
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                        Error
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="errorMensaje">Ha ocurrido un error</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}?v=20250115-1245"></script>
+    <script src="{{ url_for('static', filename='js/universal-fixes.js') }}?v=20250115-1245"></script>
+    <script src="{{ url_for('static', filename='js/simple-export.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cache-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/validacion-formularios.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/loading-states.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltips-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/table-sort.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
+    
+    <!-- Script de inicialización -->
+    <script>
+        // Configuración global de la aplicación
+        window.APP_CONFIG = {
+            name: 'Gestión de Taller',
+            version: '2.0.0',
+            theme: localStorage.getItem('theme') || 'light',
+            features: {
+                notifications: true,
+                darkMode: true,
+                analytics: true,
+                pwa: true
+            }
+        };
+        
+        // Mejorar experiencia de carga
+        document.addEventListener('DOMContentLoaded', function() {
+            // Registrar Service Worker para PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registrado:', registration.scope);
+                        
+                        // Verificar actualizaciones
+                        registration.addEventListener('updatefound', () => {
+                            if (window.notificationSystem) {
+                                window.notificationSystem.info('Nueva versión disponible. Recarga la página para actualizar.');
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ Error registrando Service Worker:', error);
+                    });
+            }
+            
+            // Ocultar loader si existe
+            const loader = document.querySelector('.page-loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 300);
+            }
+            
+            // Inicializar tooltips de Bootstrap
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Inicializar popovers
+            const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            const popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+            
+            // Mejorar experiencia de formularios
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn && !submitBtn.classList.contains('btn-loading')) {
+                        submitBtn.classList.add('btn-loading');
+                        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Procesando...';
+                    }
+                });
+            });
+        });
+        
+        // NOTA: Manejo de errores globales desactivado
+        // Causaba notificaciones molestas en cada cambio de página
+        // Los errores se siguen loggeando en consola para debugging
+        
+        // =========================================
+        // SISTEMA DE NOTIFICACIONES PERSONALIZADAS
+        // =========================================
+        
+        // Reemplazar alert() con modal personalizado
+        window.showAlert = function(mensaje, tipo = 'info') {
+            const modalId = tipo === 'error' ? 'modalError' : 'modalInformacion';
+            const mensajeId = tipo === 'error' ? 'errorMensaje' : 'informacionMensaje';
+            
+            document.getElementById(mensajeId).textContent = mensaje;
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+            
+            // También mostrar notificación toast
+            if (window.notificationSystem) {
+                if (tipo === 'error') {
+                    window.notificationSystem.error(mensaje);
+                } else {
+                    window.notificationSystem.info(mensaje);
+                }
+            }
+        };
+        
+        // Sistema robusto de confirmación con doble fallback
+        window.showConfirm = function(mensaje, callback, opciones = {}) {
+            // Verificar si Bootstrap está disponible
+            if (typeof bootstrap === 'undefined') {
+                const result = confirm(mensaje);
+                if (callback) callback(result);
+                return result;
+            }
+            
+            // Intentar usar modal personalizado
+            try {
+                return showConfirmModal(mensaje, callback, opciones);
+            } catch (error) {
+                console.warn('Modal fallido, usando nativo:', error);
+                const result = confirm(mensaje);
+                if (callback) callback(result);
+                return result;
+            }
+        };
+        
+        // Función mejorada para modales
+        function showConfirmModal(mensaje, callback, opciones = {}) {
+            const titulo = opciones.titulo || 'Confirmar Acción';
+            const textoCancelar = opciones.cancelar || 'Cancelar';
+            const textoConfirmar = opciones.confirmar || 'Confirmar';
+            const tipoBoton = opciones.tipo || 'danger';
+            
+            const modalElement = document.getElementById('modalConfirmacion');
+            if (!modalElement) {
+                throw new Error('Modal element not found');
+            }
+            
+            // Configurar contenido
+            document.getElementById('modalConfirmacionLabel').innerHTML = `<i class="fas fa-exclamation-triangle text-warning"></i> ${titulo}`;
+            document.getElementById('confirmacionMensaje').textContent = mensaje;
+            
+            const btnConfirmar = document.getElementById('confirmarAccion');
+            btnConfirmar.innerHTML = `<i class="fas fa-check"></i> ${textoConfirmar}`;
+            btnConfirmar.className = `btn btn-${tipoBoton}`;
+            
+            // Limpiar eventos previos
+            const newBtnConfirmar = btnConfirmar.cloneNode(true);
+            btnConfirmar.parentNode.replaceChild(newBtnConfirmar, btnConfirmar);
+            
+            // Configurar eventos
+            let modalResponded = false;
+            
+            newBtnConfirmar.addEventListener('click', function() {
+                if (!modalResponded) {
+                    modalResponded = true;
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance) modalInstance.hide();
+                    if (callback) callback(true);
+                }
+            });
+            
+            // Evento para cancelar
+            modalElement.addEventListener('hidden.bs.modal', function onHidden() {
+                if (!modalResponded) {
+                    modalResponded = true;
+                    if (callback) callback(false);
+                }
+                modalElement.removeEventListener('hidden.bs.modal', onHidden);
+            }, { once: true });
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            modal.show();
+            
+            return true;
+        }
+        
+        // Funciones de conveniencia
+        window.showSuccess = function(mensaje) {
+            if (window.notificationSystem) {
+                window.notificationSystem.success(mensaje);
+            } else {
+                showAlert(mensaje, 'info');
+            }
+        };
+        
+        window.showError = function(mensaje) {
+            showAlert(mensaje, 'error');
+        };
+        
+        window.showInfo = function(mensaje) {
+            showAlert(mensaje, 'info');
+        };
+        
+        // Función de emergencia para confirmación
+        window.showConfirmFallback = function(mensaje, callback) {
+            const result = confirm(mensaje);
+            if (callback) callback(result);
+            return result;
+        };
+        
+        // Verificar si los modales funcionan
+        window.testModals = function() {
+            const modalElement = document.getElementById('modalConfirmacion');
+            if (!modalElement) {
+                console.warn('Modales no disponibles, usando confirmación nativa');
+                window.showConfirm = window.showConfirmFallback;
+                return false;
+            }
+            return true;
+        };
+        
+        // Sobrescribir alert y confirm globalmente (opcional, para compatibility)
+        window.alert = function(mensaje) {
+            showAlert(mensaje, 'info');
+        };
+        
+        // NO sobrescribir confirm para mantener funcionamiento como respaldo
+        // window.confirm mantendrá su comportamiento nativo como fallback
+        
+        // Manejo de promesas rechazadas
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Promesa rechazada:', e.reason);
+            if (window.notificationSystem) {
+                window.notificationSystem.warning('Problema de conectividad detectado');
+            }
+        });
+    </script>
+    
+    <!-- Función de emergencia para modales bloqueados -->
+    <script>
+        // Agregar atajo de teclado Ctrl+Alt+F para limpiar modales bloqueados
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                if (typeof window.limpiarModalesBloqueados === 'function') {
+                    console.log('🔧 Atajo de emergencia activado - limpiando modales');
+                    window.limpiarModalesBloqueados();
+                    // Mostrar notificación temporal
+                    if (typeof window.showInfo === 'function') {
+                        window.showInfo('Modales limpiados exitosamente');
+                    }
+                } else {
+                    console.warn('Función de limpieza no disponible');
+                }
+            }
+        });
+        
+        // Función global de emergencia simple disponible en consola
+        window.fixModalNow = function() {
+            console.log('🚨 Función de emergencia ejecutada desde consola');
+            // Limpieza específica para "modal-backdrop fade show"
+            const backdrops = document.querySelectorAll('.modal-backdrop, .modal-backdrop.fade, .modal-backdrop.show, .modal-backdrop.fade.show');
+            console.log('🔍 Backdrops encontrados:', backdrops.length);
+            backdrops.forEach((backdrop, index) => {
+                console.log(`Eliminando backdrop ${index + 1}:`, backdrop.className);
+                backdrop.remove();
+            });
+            
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('position');
+            document.documentElement.style.removeProperty('overflow');
+            
+            console.log('✅ Limpieza específica completada - modal-backdrop fade show eliminado');
+        };
+        
+        // ======================================== 
+        // FUNCIONALIDAD MENÚ MÓVIL RESPONSIVE
+        // ========================================
+        
+        function initMobileMenu() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            if (!sidebarToggle || !sidebar || !sidebarOverlay) return;
+            
+            // Función para mostrar sidebar
+            function showSidebar() {
+                sidebar.classList.add('show');
+                sidebarOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                console.log('📱 Sidebar móvil mostrado');
+            }
+            
+            // Función para ocultar sidebar
+            function hideSidebar() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+                console.log('📱 Sidebar móvil ocultado');
+            }
+            
+            // Toggle del botón hamburguesa
+            sidebarToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (sidebar.classList.contains('show')) {
+                    hideSidebar();
+                } else {
+                    showSidebar();
+                }
+            });
+            
+            // Click en overlay para cerrar
+            sidebarOverlay.addEventListener('click', function() {
+                hideSidebar();
+            });
+            
+            // Cerrar al hacer click en un enlace del sidebar (en móvil)
+            const sidebarLinks = sidebar.querySelectorAll('a.nav-link:not(.dropdown-toggle)');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 992) {
+                        setTimeout(hideSidebar, 100);
+                    }
+                });
+            });
+            
+            // Cerrar con tecla Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+                    hideSidebar();
+                }
+            });
+            
+            // Cerrar sidebar al cambiar a pantalla grande
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992 && sidebar.classList.contains('show')) {
+                    hideSidebar();
+                }
+            });
+            
+            console.log('📱 Sistema de menú móvil inicializado');
+        }
+        
+        // Inicializar menú móvil cuando cargue el DOM
+        document.addEventListener('DOMContentLoaded', initMobileMenu);
+        
+        // ========================================
+        // SIMPLE EXPORT TESTING
+        // ========================================
+        
+        // Auto-test simple después de cargar
+        setTimeout(() => {
+            console.log('🎯 Verificando sistema de exportación...');
+            console.log('- exportPDF:', typeof window.exportPDF);
+            console.log('- exportarDashboard:', typeof window.exportarDashboard);
+            console.log('- exportarAuditoria:', typeof window.exportarAuditoria);
+            
+            const exportButtons = document.querySelectorAll('[onclick*="export"]');
+            console.log(`📊 Botones encontrados: ${exportButtons.length}`);
+            
+            if (exportButtons.length === 0) {
+                console.warn('⚠️ No se encontraron botones de exportación en esta página');
+            }
+        }, 1000);
+    </script>
+    
+    <!-- Block para scripts específicos de página -->
+    {% block scripts %}{% endblock %}
+    
+    <!-- Analytics y PWA (próximamente) -->
+    {% block analytics %}{% endblock %}
+</body>
+</html>

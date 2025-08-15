@@ -1,0 +1,471 @@
+/**
+ * MEJORAS RESPONSIVE DESIGN
+ * =========================
+ * Optimizaciones para dispositivos móviles y tablets
+ */
+
+/* ======================================== */
+/* RESPONSIVE LAYOUT FIXES */
+/* ======================================== */
+
+/* Fix para blank space bug al cerrar menú móvil */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    .navbar-collapse.show {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--bs-dark) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+        z-index: 1000 !important;
+    }
+    
+    .main-content {
+        margin-top: 0 !important;
+        padding-top: 80px !important;
+        min-height: calc(100vh - 80px) !important;
+    }
+    
+    /* Evitar desplazamiento del contenido */
+    body.navbar-expanded {
+        overflow-x: hidden !important;
+    }
+    
+    .navbar-nav {
+        padding: 1rem 0 !important;
+    }
+    
+    .nav-link {
+        padding: 0.75rem 1.5rem !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    }
+}
+
+/* ======================================== */
+/* TABLA RESPONSIVE MEJORADA */
+/* ======================================== */
+
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Tablas stack en móvil */
+    .table-mobile-stack {
+        font-size: 0.875rem;
+    }
+    
+    .table-mobile-stack thead {
+        display: none;
+    }
+    
+    .table-mobile-stack tbody,
+    .table-mobile-stack tr,
+    .table-mobile-stack td {
+        display: block !important;
+        width: 100% !important;
+    }
+    
+    .table-mobile-stack tr {
+        background: var(--bs-white);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    
+    .table-mobile-stack td {
+        border: none !important;
+        padding: 0.5rem 0 !important;
+        text-align: left !important;
+    }
+    
+    .table-mobile-stack td:before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: var(--bs-primary);
+        display: inline-block;
+        width: 120px;
+        min-width: 120px;
+    }
+    
+    /* Acciones en tabla móvil */
+    .table-mobile-stack .btn-group {
+        margin-top: 0.5rem;
+    }
+    
+    .table-mobile-stack .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* ======================================== */
+/* FORMULARIOS RESPONSIVE */
+/* ======================================== */
+
+@media (max-width: 576px) {
+    .form-group,
+    .mb-3 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+    
+    .form-control,
+    .form-select {
+        font-size: 16px !important; /* Evita zoom en iOS */
+        padding: 0.75rem !important;
+        border-radius: 0.5rem !important;
+    }
+    
+    /* Botones en formularios móviles */
+    .btn-group-mobile {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .btn-group-mobile .btn {
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Modal en móvil */
+    .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+    
+    .modal-header {
+        padding: 1rem !important;
+    }
+    
+    .modal-body {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    .modal-footer {
+        padding: 1rem !important;
+        flex-direction: column !important;
+    }
+    
+    .modal-footer .btn {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+/* ======================================== */
+/* CARDS RESPONSIVE */
+/* ======================================== */
+
+@media (max-width: 768px) {
+    .card-columns {
+        column-count: 1 !important;
+    }
+    
+    .card {
+        margin-bottom: 1.5rem !important;
+        border-radius: 0.75rem !important;
+    }
+    
+    .card-header {
+        padding: 1rem !important;
+        background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-dark, #0056b3)) !important;
+        color: white !important;
+        border-radius: 0.75rem 0.75rem 0 0 !important;
+    }
+    
+    .card-body {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    /* Stats cards en móvil */
+    .stats-card {
+        text-align: center;
+        padding: 1.5rem !important;
+    }
+    
+    .stats-card .card-title {
+        font-size: 2rem !important;
+        font-weight: bold;
+        color: var(--bs-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-card .card-text {
+        font-size: 0.9rem;
+        color: var(--bs-secondary);
+    }
+}
+
+/* ======================================== */
+/* NAVEGACIÓN MEJORADA */
+/* ======================================== */
+
+@media (max-width: 991.98px) {
+    /* Mobile navbar */
+    .navbar.d-lg-none {
+        height: 60px !important;
+        z-index: 1060 !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Sidebar responsive */
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 280px !important;
+        height: 100vh !important;
+        background: var(--sidebar-bg, linear-gradient(135deg, #667eea 0%, #764ba2 100%)) !important;
+        transition: left 0.3s ease !important;
+        z-index: 1055 !important;
+        overflow-y: auto !important;
+        box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar.show {
+        left: 0 !important;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 1049;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Ajustar main content para navbar móvil */
+    .main-content {
+        padding-top: 60px !important;
+    }
+    
+    /* Breadcrumbs responsivo */
+    .breadcrumb {
+        flex-wrap: wrap;
+        font-size: 0.875rem;
+    }
+    
+    .breadcrumb-item {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* ======================================== */
+/* UTILITIES RESPONSIVE */
+/* ======================================== */
+
+/* Texto responsive */
+@media (max-width: 576px) {
+    .display-1 { font-size: 2rem !important; }
+    .display-2 { font-size: 1.75rem !important; }
+    .display-3 { font-size: 1.5rem !important; }
+    .display-4 { font-size: 1.25rem !important; }
+    
+    h1 { font-size: 1.75rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.25rem !important; }
+    h4 { font-size: 1.1rem !important; }
+    h5 { font-size: 1rem !important; }
+    h6 { font-size: 0.9rem !important; }
+}
+
+/* Spacing responsive */
+@media (max-width: 768px) {
+    .py-5 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+    .px-5 { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .my-5 { margin-top: 2rem !important; margin-bottom: 2rem !important; }
+    .mx-5 { margin-left: 1rem !important; margin-right: 1rem !important; }
+}
+
+/* ======================================== */
+/* COMPONENTES ESPECÍFICOS */
+/* ======================================== */
+
+/* Dashboard responsive */
+@media (max-width: 768px) {
+    .dashboard-metrics {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .metric-card {
+        padding: 1rem !important;
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 1.5rem !important;
+        font-weight: bold;
+    }
+    
+    .metric-label {
+        font-size: 0.875rem;
+        color: var(--bs-secondary);
+    }
+}
+
+/* Charts responsive */
+@media (max-width: 768px) {
+    .chart-container {
+        position: relative;
+        height: 250px !important;
+        margin-bottom: 2rem;
+    }
+    
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+}
+
+/* ======================================== */
+/* ACCESSIBILITY IMPROVEMENTS */
+/* ======================================== */
+
+/* Focus indicators mejorados */
+@media (max-width: 768px) {
+    .btn:focus,
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        border-color: #86b7fe !important;
+    }
+    
+    /* Tap targets mínimos */
+    .btn,
+    .nav-link,
+    .dropdown-item {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Links con mejor área de tap */
+    a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+/* ======================================== */
+/* DARK MODE RESPONSIVE */
+/* ======================================== */
+
+@media (max-width: 768px) {
+    .dark-mode .table-mobile-stack tr {
+        background: var(--bs-dark) !important;
+        border-color: var(--bs-secondary) !important;
+        color: var(--bs-light) !important;
+    }
+    
+    .dark-mode .modal-content {
+        background: var(--bs-dark) !important;
+        border-color: var(--bs-secondary) !important;
+    }
+    
+    .dark-mode .form-control,
+    .dark-mode .form-select {
+        background: var(--bs-dark) !important;
+        border-color: var(--bs-secondary) !important;
+        color: var(--bs-light) !important;
+    }
+}
+
+/* ======================================== */
+/* PRINT STYLES */
+/* ======================================== */
+
+@media print {
+    .navbar,
+    .sidebar,
+    .btn,
+    .modal,
+    .toast {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+}
+
+/* ======================================== */
+/* ANIMATION IMPROVEMENTS */
+/* ======================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    .slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

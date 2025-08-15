@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes y Estadísticas - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('informe_repuestos') }}" class="btn btn-outline-info">
+                <i class="fas fa-boxes"></i> Análisis Repuestos
+            </a>
+            <a href="{{ url_for('informe_mano_obra') }}" class="btn btn-outline-warning">
+                <i class="fas fa-user-cog"></i> Análisis Mano de Obra
+            </a>
+            <a href="{{ url_for('informe_repuestos_inteligente') }}" class="btn btn-outline-success">
+                <i class="fas fa-brain"></i> Análisis Inteligente
+            </a>
+        </div>
+        <div class="btn-group me-2">
+            <a href="{{ url_for('gestion_categorias') }}" class="btn btn-outline-primary">
+                <i class="fas fa-cogs"></i> Gestionar Categorías
+            </a>
+        </div>
+        <button onclick="exportarReporte()" class="btn btn-outline-success me-2">
+            <i class="fas fa-download"></i> Exportar PDF
+        </button>
+        <button onclick="window.print()" class="btn btn-outline-primary">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Tarjetas de estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                <h3 class="text-primary">{{ stats.total_clientes }}</h3>
+                <p class="text-muted mb-0">Clientes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-cogs fa-2x text-success mb-2"></i>
+                <h3 class="text-success">{{ stats.total_equipos }}</h3>
+                <p class="text-muted mb-0">Equipos Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                <h3 class="text-info">{{ stats.equipos_activos }}</h3>
+                <p class="text-muted mb-0">Equipos Activos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 col-sm-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-wrench fa-2x text-warning mb-2"></i>
+                <h3 class="text-warning">{{ stats.total_mantenimientos }}</h3>
+                <p class="text-muted mb-0">Mantenimientos Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 col-sm-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-calendar-check fa-2x text-danger mb-2"></i>
+                <h3 class="text-danger">{{ stats.mantenimientos_mes }}</h3>
+                <p class="text-muted mb-0">Este Mes</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> Mantenimientos por Mes
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartMantenimientos" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Tablas de análisis -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy"></i> Top Clientes por Equipos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if equipos_por_cliente %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th class="text-end">Equipos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in equipos_por_cliente %}
+                                <tr>
+                                    <td>{{ cliente.nombre }}</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ cliente.total_equipos }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay datos disponibles</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-fire"></i> Clientes Más Activos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if clientes_activos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th class="text-end">Mantenimientos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cliente in clientes_activos %}
+                                <tr>
+                                    <td>{{ cliente.nombre }}</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success">{{ cliente.total_mantenimientos }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay datos disponibles</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis de tipos de mantenimiento -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools"></i> Tipos de Mantenimiento
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if tipos_mantenimiento %}
+                    {% for tipo in tipos_mantenimiento %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ tipo.tipo_mantenimiento }}</span>
+                        <div>
+                            <span class="badge bg-info me-2">{{ tipo.total }}</span>
+                            <div class="progress" style="width: 100px; height: 8px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     data-width="{{ ((tipo.total / stats.total_mantenimientos * 100) if stats.total_mantenimientos > 0 else 0)|round(1) }}"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No hay datos disponibles</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Mantenimientos Recientes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if mantenimientos_recientes %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Equipo</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mant in mantenimientos_recientes %}
+                                <tr>
+                                    <td><small>{{ mant.fecha_mantenimiento }}</small></td>
+                                    <td><small>{{ mant.cliente_nombre }}</small></td>
+                                    <td><small>{{ mant.equipo_nombre }}</small></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if mant.tipo_mantenimiento == 'Preventivo' else 'danger' }}">
+                                            {{ mant.tipo_mantenimiento }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay datos disponibles</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis temporal -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> Tendencia de Mantenimientos (Últimos 12 Meses)
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if mantenimientos_por_mes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th>Tendencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mes in mantenimientos_por_mes %}
+                                <tr>
+                                    <td>{{ mes.mes }}</td>
+                                    <td class="text-end">{{ mes.total }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                 data-width="{{ ((mes.total / (mantenimientos_por_mes|map(attribute='total')|max or 1) * 100))|round(1) }}"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-info-circle"></i> No hay suficientes datos para mostrar tendencias
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Configuración de colores
+const colors = {
+    primary: '#667eea',
+    success: '#28a745',
+    warning: '#ffc107',
+    danger: '#dc3545',
+    info: '#17a2b8'
+};
+
+// Cargar datos para gráficos
+fetch('/api/reportes/charts')
+    .then(response => response.json())
+    .then(data => {
+        // Gráfico de mantenimientos por mes
+        const ctxMant = document.getElementById('chartMantenimientos').getContext('2d');
+        new Chart(ctxMant, {
+            type: 'line',
+            data: {
+                labels: data.mantenimientos_por_mes.map(item => item.mes),
+                datasets: [{
+                    label: 'Mantenimientos',
+                    data: data.mantenimientos_por_mes.map(item => item.total),
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary + '20',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+
+    })
+    .catch(error => console.error('Error cargando datos de gráficos:', error));
+
+// Función para exportar reporte
+function exportarReporte() {
+    // Abrir PDF en nueva ventana
+    window.open('/api/export/pdf/dashboard', '_blank');
+    showSuccess('Generando reporte PDF...');
+}
+
+// Inicializar barras de progreso
+document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+    const width = bar.getAttribute('data-width');
+    bar.style.width = width + '%';
+});
+
+// Estilos para impresión
+const printStyles = `
+<style media="print">
+    .btn, .btn-toolbar { display: none !important; }
+    .sidebar { display: none !important; }
+    .container-fluid { margin: 0 !important; padding: 0 !important; }
+    main { margin: 0 !important; }
+    .card { break-inside: avoid; }
+    @page { margin: 1cm; }
+</style>
+`;
+document.head.insertAdjacentHTML('beforeend', printStyles);
+</script>
+
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Repuesto{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-cogs"></i> Editar Repuesto</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('repuestos') }}">Repuestos</a></li>
+                        <li class="breadcrumb-item active">Editar {{ repuesto.nombre }}</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Editar Información del Repuesto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">
+                                        <i class="fas fa-tag"></i> Nombre *
+                                    </label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" 
+                                           value="{{ repuesto.nombre }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="codigo" class="form-label">
+                                        <i class="fas fa-barcode"></i> Código
+                                    </label>
+                                    <input type="text" class="form-control" id="codigo" name="codigo" 
+                                           value="{{ repuesto.codigo or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">
+                                <i class="fas fa-align-left"></i> Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" 
+                                      rows="3">{{ repuesto.descripcion or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="stock_actual" class="form-label">
+                                        <i class="fas fa-cubes"></i> Stock Actual
+                                    </label>
+                                    <input type="number" class="form-control" id="stock_actual" name="stock_actual" 
+                                           value="{{ repuesto.stock_actual }}" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="stock_minimo" class="form-label">
+                                        <i class="fas fa-exclamation-triangle"></i> Stock Mínimo
+                                    </label>
+                                    <input type="number" class="form-control" id="stock_minimo" name="stock_minimo" 
+                                           value="{{ repuesto.stock_minimo }}" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precio_unitario" class="form-label">
+                                        <i class="fas fa-dollar-sign"></i> Precio Unitario
+                                    </label>
+                                    <input type="number" class="form-control" id="precio_unitario" name="precio_unitario" 
+                                           value="{{ repuesto.precio_unitario or '' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="proveedor" class="form-label">
+                                        <i class="fas fa-truck"></i> Proveedor
+                                    </label>
+                                    <input type="text" class="form-control" id="proveedor" name="proveedor" 
+                                           value="{{ repuesto.proveedor or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ubicacion" class="form-label">
+                                        <i class="fas fa-map-marker-alt"></i> Ubicación
+                                    </label>
+                                    <input type="text" class="form-control" id="ubicacion" name="ubicacion" 
+                                           value="{{ repuesto.ubicacion or '' }}"
+                                           placeholder="Ej: Estante A-3, Depósito 1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                            <a href="{{ url_for('repuestos') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle"></i> Información del Sistema
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Fecha de creación:</strong> {{ repuesto.fecha_creacion }}</p>
+                            <p><strong>ID del repuesto:</strong> {{ repuesto.id }}</p>
+                            {% if repuesto.stock_actual <= repuesto.stock_minimo %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Stock bajo:</strong> Este repuesto necesita reposición.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-exchange-alt"></i> Ajuste Rápido de Stock
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('ajustar_stock', id=repuesto.id) }}">
+                                <div class="mb-3">
+                                    <label for="nuevo_stock" class="form-label">Nuevo Stock</label>
+                                    <input type="number" class="form-control" id="nuevo_stock" name="nuevo_stock" 
+                                           value="{{ repuesto.stock_actual }}" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="motivo" class="form-label">Motivo</label>
+                                    <select class="form-control" id="motivo" name="motivo">
+                                        <option value="Ajuste manual">Ajuste manual</option>
+                                        <option value="Reposición">Reposición</option>
+                                        <option value="Corrección de inventario">Corrección de inventario</option>
+                                        <option value="Daño/pérdida">Daño/pérdida</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-sync"></i> Ajustar Stock
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

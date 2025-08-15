@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración General - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-cog"></i> Panel de Configuración General</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item active">Configuración</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Estadísticas de configuración -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-palette fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">{{ temas|length }}</h5>
+                <p class="card-text">Temas Disponibles</p>
+                <small class="text-muted">Tema actual: {{ stats.tema_actual.title() }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-wifi fa-3x text-success mb-3"></i>
+                <h5 class="card-title">{{ stats.dispositivos_iot }}</h5>
+                <p class="card-text">Dispositivos IoT</p>
+                <small class="text-muted">Configurados</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-plug fa-3x text-info mb-3"></i>
+                <h5 class="card-title">{{ stats.apis_conectadas }}</h5>
+                <p class="card-text">APIs Conectadas</p>
+                <small class="text-muted">Funcionando</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">{{ stats.lecturas_iot_hoy }}</h5>
+                <p class="card-text">Lecturas IoT Hoy</p>
+                <small class="text-muted">Datos recolectados</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuraciones por categoría -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-building me-2"></i>
+                    Configuración General
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for config in configuraciones.get('general', []) %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ config.descripcion or config.clave.replace('_', ' ').title() }}</strong>
+                            <br>
+                            <small class="text-muted">{{ config.valor or 'No configurado' }}</small>
+                        </div>
+                        <span class="badge bg-primary">{{ config.tipo.title() }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('configuracion_general') }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar Configuración
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-palette me-2"></i>
+                    Temas y Apariencia
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for tema in temas[:4] %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>{{ tema.nombre }}</strong>
+                            <br>
+                            <small class="text-muted">{{ tema.descripcion or 'Sin descripción' }}</small>
+                        </div>
+                        {% if tema.predeterminado %}
+                        <span class="badge bg-warning">Predeterminado</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Disponible</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('configuracion_temas') }}" class="btn btn-primary">
+                        <i class="fas fa-palette"></i> Gestionar Temas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Acciones Rápidas de Configuración
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{{ url_for('configuracion_general') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="fas fa-building fa-2x mb-2"></i>
+                            <strong>Información Empresa</strong>
+                            <small class="text-muted">Logo, nombre, zona horaria</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{{ url_for('configuracion_temas') }}" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="fas fa-palette fa-2x mb-2"></i>
+                            <strong>Temas y Colores</strong>
+                            <small class="text-muted">Personalizar apariencia</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{{ url_for('iot_dashboard') }}" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="fas fa-wifi fa-2x mb-2"></i>
+                            <strong>IoT y Sensores</strong>
+                            <small class="text-muted">Dispositivos conectados</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{{ url_for('apis_dashboard') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="fas fa-plug fa-2x mb-2"></i>
+                            <strong>APIs Externas</strong>
+                            <small class="text-muted">Integraciones</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Aquí se pueden agregar scripts específicos de configuración
+    console.log('Panel de configuración cargado');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Test Exportación - Gestión de Taller{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1><i class="fas fa-flask"></i> Test de Exportación PDF</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('reportes') }}">Reportes</a></li>
+            <li class="breadcrumb-item active">Test Exportación</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="container-fluid" style="max-height: 85vh; overflow-y: auto; padding-bottom: 50px;">
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle fa-2x me-3"></i>
+            <div>
+                <h5 class="mb-1">Instrucciones de Uso</h5>
+                <p class="mb-0">
+                    <strong>1.</strong> Haz click en cualquier botón para probar las exportaciones<br>
+                    <strong>2.</strong> Abre la consola del navegador (<kbd>F12</kbd>) para ver los logs detallados<br>
+                    <strong>3.</strong> Si un botón no funciona, usa los enlaces directos al final
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Tests Directos</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-2 w-100" onclick="exportarPDF('dashboard')">
+                        📊 Test Dashboard PDF
+                    </button>
+                    <button class="btn btn-success mb-2 w-100" onclick="exportarPDF('equipos')">
+                        ⚙️ Test Equipos PDF
+                    </button>
+                    <button class="btn btn-warning mb-2 w-100" onclick="exportarPDF('mantenimientos')">
+                        🔧 Test Mantenimientos PDF
+                    </button>
+                    <button class="btn btn-info mb-2 w-100" onclick="exportarPDF('clientes')">
+                        👥 Test Clientes PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Tests con Funciones Específicas</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-2 w-100" onclick="exportarDashboard('pdf')">
+                        📈 Test exportarDashboard
+                    </button>
+                    <button class="btn btn-secondary mb-2 w-100" onclick="exportarAuditoria('pdf')">
+                        📋 Test exportarAuditoria
+                    </button>
+                    <button class="btn btn-dark mb-2 w-100" onclick="exportarProgramas()">
+                        ⚙️ Test exportarProgramas
+                    </button>
+                    <button class="btn btn-outline-primary mb-2 w-100" onclick="testSimpleExport('dashboard')">
+                        🧪 Test Simple Export
+                    </button>
+                    <button class="btn btn-outline-secondary mb-2 w-100" onclick="console.clear(); console.log('🧹 Consola limpiada');">
+                        🧹 Limpiar Consola
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Tests de Backend Directo</h5>
+                </div>
+                <div class="card-body">
+                    <p>Enlaces directos a las rutas del backend:</p>
+                    <a href="/api/export/pdf/dashboard" target="_blank" class="btn btn-outline-primary me-2">
+                        Dashboard PDF Directo
+                    </a>
+                    <a href="/api/export/pdf/equipos" target="_blank" class="btn btn-outline-success me-2">
+                        Equipos PDF Directo
+                    </a>
+                    <a href="/api/test/export/dashboard" target="_blank" class="btn btn-outline-warning me-2">
+                        Test Backend Dashboard
+                    </a>
+                    <a href="/api/test/export/equipos" target="_blank" class="btn btn-outline-info me-2">
+                        Test Backend Equipos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Estado del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div id="system-status">
+                        <p>🔄 Verificando funciones...</p>
+                    </div>
+                    <button class="btn btn-info btn-sm" onclick="checkSystemStatus()">
+                        🔄 Actualizar Estado
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Comandos de Consola</h5>
+                </div>
+                <div class="card-body">
+                    <p>Ejecuta estos comandos en la consola (F12):</p>
+                    <div class="code-block">
+                        <code>exportarPDF('dashboard');</code><br>
+                        <code>testSimpleExport('equipos');</code><br>
+                        <code>console.log('Functions:', typeof exportPDF);</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Logs en Tiempo Real</h5>
+                </div>
+                <div class="card-body">
+                    <div id="live-logs" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace;">
+                        <div class="text-muted">Los logs aparecerán aquí cuando uses los botones...</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm mt-2" onclick="clearLiveLogs()">
+                        🗑️ Limpiar Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.code-block {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.code-block code {
+    color: #d63384;
+    font-weight: 500;
+}
+
+.alert-info kbd {
+    background: #0d6efd;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 85%;
+}
+</style>
+
+<script>
+// Sistema de logs en tiempo real
+function addLiveLog(message, type = 'info') {
+    const logsContainer = document.getElementById('live-logs');
+    const timestamp = new Date().toLocaleTimeString();
+    const colors = {
+        info: '#17a2b8',
+        success: '#28a745',
+        warning: '#ffc107',
+        error: '#dc3545'
+    };
+    
+    const logEntry = document.createElement('div');
+    logEntry.style.marginBottom = '5px';
+    logEntry.style.color = colors[type] || colors.info;
+    logEntry.innerHTML = `<span style="color: #6c757d;">[${timestamp}]</span> ${message}`;
+    
+    logsContainer.appendChild(logEntry);
+    logsContainer.scrollTop = logsContainer.scrollHeight;
+    
+    // Remover el mensaje placeholder si existe
+    const placeholder = logsContainer.querySelector('.text-muted');
+    if (placeholder) {
+        placeholder.remove();
+    }
+}
+
+function clearLiveLogs() {
+    const logsContainer = document.getElementById('live-logs');
+    logsContainer.innerHTML = '<div class="text-muted">Logs limpiados...</div>';
+    addLiveLog('🧹 Logs limpiados', 'info');
+}
+
+// Verificar estado del sistema
+function checkSystemStatus() {
+    const statusContainer = document.getElementById('system-status');
+    let status = '<div class="mb-2">';
+    
+    // Verificar funciones principales
+    const functions = {
+        'exportarPDF': window.exportarPDF,
+        'exportarDashboard': window.exportarDashboard,
+        'exportarAuditoria': window.exportarAuditoria,
+        'exportarProgramas': window.exportarProgramas,
+        'testSimpleExport': window.testSimpleExport
+    };
+    
+    for (const [name, func] of Object.entries(functions)) {
+        const isFunction = typeof func === 'function';
+        const icon = isFunction ? '✅' : '❌';
+        const color = isFunction ? 'text-success' : 'text-danger';
+        status += `<div class="${color}">${icon} ${name}: ${typeof func}</div>`;
+    }
+    
+    // Verificar elementos del DOM
+    const buttons = document.querySelectorAll('[onclick*="export"]');
+    status += `<div class="text-info">📊 Botones encontrados: ${buttons.length}</div>`;
+    
+    status += '</div>';
+    statusContainer.innerHTML = status;
+    
+    addLiveLog(`🔍 Estado verificado: ${Object.keys(functions).length} funciones, ${buttons.length} botones`, 'info');
+}
+
+// Override console.log para capturar logs
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+    originalConsoleLog.apply(console, args);
+    
+    // Capturar solo logs relacionados con exportación
+    const message = args.join(' ');
+    if (message.includes('export') || message.includes('PDF') || message.includes('🔥') || message.includes('✅') || message.includes('❌')) {
+        addLiveLog(message, message.includes('❌') ? 'error' : message.includes('✅') ? 'success' : 'info');
+    }
+};
+
+// Override funciones de exportación para agregar logs
+const originalExportarPDF = window.exportarPDF;
+if (typeof originalExportarPDF === 'function') {
+    window.exportarPDF = function(tipo) {
+        addLiveLog(`🚀 Iniciando exportación PDF: ${tipo}`, 'info');
+        try {
+            const result = originalExportarPDF(tipo);
+            addLiveLog(`✅ Exportación iniciada exitosamente`, 'success');
+            return result;
+        } catch (error) {
+            addLiveLog(`❌ Error en exportación: ${error.message}`, 'error');
+            throw error;
+        }
+    };
+}
+
+// Verificar estado inicial
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        checkSystemStatus();
+        addLiveLog('🎯 Sistema de test cargado', 'success');
+    }, 500);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}APIs Externas - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plug"></i> Dashboard de APIs Externas</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('configuracion_app') }}">Configuración</a></li>
+            <li class="breadcrumb-item active">APIs Externas</li>
+        </ol>
+    </nav>
+    <div class="header-actions">
+        <a href="{{ url_for('nueva_api') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva API
+        </a>
+    </div>
+</div>
+
+<!-- Estadísticas de APIs -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <i class="fas fa-plug fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">{{ stats.total_apis }}</h5>
+                <p class="card-text">APIs Configuradas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5 class="card-title">{{ stats.apis_activas }}</h5>
+                <p class="card-text">APIs Activas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <i class="fas fa-wifi fa-3x text-info mb-3"></i>
+                <h5 class="card-title">{{ stats.apis_conectadas }}</h5>
+                <p class="card-text">APIs Conectadas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <i class="fas fa-sync fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">{{ stats.sincronizaciones_hoy }}</h5>
+                <p class="card-text">Sincronizaciones Hoy</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de APIs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    APIs Configuradas
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if apis %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>URL Base</th>
+                                <th>Estado</th>
+                                <th>Última Sincronización</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for api in apis %}
+                            <tr>
+                                <td>
+                                    <strong>{{ api.nombre }}</strong>
+                                    {% if not api.activa %}
+                                    <span class="badge bg-secondary ms-2">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if api.tipo == 'proveedor' else 'info' if api.tipo == 'contabilidad' else 'secondary' }}">
+                                        {{ api.tipo.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <code class="small">{{ api.url_base[:50] }}{% if api.url_base|length > 50 %}...{% endif %}</code>
+                                </td>
+                                <td>
+                                    {% if api.estado_conexion == 'conectada' %}
+                                    <span class="badge bg-success">Conectada</span>
+                                    {% elif api.estado_conexion == 'error' %}
+                                    <span class="badge bg-danger">Error</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">No Testada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if api.ultima_sincronizacion %}
+                                    <small>{{ api.ultima_sincronizacion[:16] }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="probarAPI({{ api.id }})" title="Probar conexión">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="sincronizarAPI({{ api.id }})" title="Sincronizar" {{ 'disabled' if not api.activa }}>
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning" onclick="editarAPI({{ api.id }})" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-plug text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3">No hay APIs configuradas</h5>
+                    <p class="text-muted">Configura tu primera API externa para empezar a sincronizar datos</p>
+                    <a href="{{ url_for('nueva_api') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Configurar Primera API
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- APIs Populares -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-star me-2"></i>
+                    APIs Populares para Talleres
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Proveedores de Repuestos</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> AutoZone API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> NAPA Auto Parts API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> Repuestos González API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> Catálogo Bosch API</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-info">Sistemas de Contabilidad</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> QuickBooks API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> Facturama México API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> SAT México API</li>
+                            <li><i class="fas fa-external-link-alt text-muted me-2"></i> Conta Simple API</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function probarAPI(apiId) {
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    fetch(`/api/externa/probar/${apiId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.exito) {
+                if (window.notificationSystem) {
+                    window.notificationSystem.success(`API conectada exitosamente (HTTP ${data.codigo})`);
+                }
+                // Recargar la página para mostrar el nuevo estado
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                if (window.notificationSystem) {
+                    window.notificationSystem.error(`Error: ${data.error}`);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.notificationSystem) {
+                window.notificationSystem.error('Error de conexión');
+            }
+        })
+        .finally(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        });
+}
+
+function sincronizarAPI(apiId) {
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    fetch(`/api/externa/sincronizar/${apiId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.exito) {
+                let mensaje = 'Sincronización exitosa';
+                if (data.productos_sincronizados) {
+                    mensaje += ` - ${data.productos_sincronizados} productos procesados`;
+                }
+                if (data.facturas_enviadas) {
+                    mensaje += ` - ${data.facturas_enviadas} facturas enviadas`;
+                }
+                
+                if (window.notificationSystem) {
+                    window.notificationSystem.success(mensaje);
+                }
+                
+                // Recargar la página para mostrar el nuevo estado
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                if (window.notificationSystem) {
+                    window.notificationSystem.error(`Error: ${data.error}`);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.notificationSystem) {
+                window.notificationSystem.error('Error de sincronización');
+            }
+        })
+        .finally(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        });
+}
+
+function editarAPI(apiId) {
+    if (window.notificationSystem) {
+        window.notificationSystem.info('Función de edición en desarrollo');
+    }
+}
+</script>
+{% endblock %}

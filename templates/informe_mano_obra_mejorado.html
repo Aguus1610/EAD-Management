@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis de Mano de Obra - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado y Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1><i class="fas fa-wrench"></i> Análisis de Mano de Obra</h1>
+                <div>
+                    <a href="{{ url_for('reportes_avanzados') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Reportes
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Panel de Filtros -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i> Filtros de Análisis
+                        <button class="btn btn-sm btn-outline-primary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosPanel">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </h5>
+                </div>
+                <div class="collapse show" id="filtrosPanel">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" name="fecha_inicio" value="{{ fecha_inicio }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" name="fecha_fin" value="{{ fecha_fin }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cliente Específico</label>
+                                <select class="form-control" name="cliente_id">
+                                    <option value="">Todos los clientes</option>
+                                    {% for cliente in clientes_lista %}
+                                    <option value="{{ cliente.id }}" {% if cliente_id == cliente.id|string %}selected{% endif %}>
+                                        {{ cliente.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Mostrar Detalles</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="detalles" value="1" {% if mostrar_detalles %}checked{% endif %}>
+                                    <label class="form-check-label">Incluir trabajos recientes</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Aplicar Filtros
+                                </button>
+                                <a href="{{ url_for('informe_mano_obra') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Filtros -->
+    {% if fecha_inicio or fecha_fin or cliente_id %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i> <strong>Filtros Aplicados:</strong>
+        {% if fecha_inicio %}Desde: {{ fecha_inicio }}{% endif %}
+        {% if fecha_fin %} Hasta: {{ fecha_fin }}{% endif %}
+        {% if cliente_id %} Cliente: {{ clientes_lista|selectattr('id', 'equalto', cliente_id|int)|map(attribute='nombre')|first }}{% endif %}
+        - Analizando {{ stats.total_mantenimientos }} mantenimientos
+    </div>
+    {% endif %}
+
+    <!-- Estadísticas Globales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-tasks fa-2x text-primary mb-2"></i>
+                    <h3 class="text-primary">{{ stats.total_trabajos }}</h3>
+                    <p class="text-muted mb-0">Total Trabajos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <h3 class="text-danger">{{ stats.complejos }}</h3>
+                    <p class="text-muted mb-0">Trabajos Complejos</p>
+                    <small class="text-muted">({{ stats.porcentaje_complejos }}%)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                    <h3 class="text-warning">{{ stats.medios }}</h3>
+                    <p class="text-muted mb-0">Trabajos Medios</p>
+                    <small class="text-muted">({{ stats.porcentaje_medios }}%)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h3 class="text-success">{{ stats.simples }}</h3>
+                    <p class="text-muted mb-0">Trabajos Simples</p>
+                    <small class="text-muted">({{ stats.porcentaje_simples }}%)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Distribución de Complejidad -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Distribución de Complejidad
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartComplejidad" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Tipos de Trabajo -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-doughnut"></i> Tipos de Trabajo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTipos" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis por Cliente -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-users"></i> Análisis por Cliente
+                <small class="text-muted">({{ analisis_por_cliente|length }} clientes)</small>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if analisis_por_cliente %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="clientesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-column="cliente">
+                                <i class="fas fa-sort"></i> Cliente
+                            </th>
+                            <th class="sortable" data-column="total">
+                                <i class="fas fa-sort"></i> Total Trabajos
+                            </th>
+                            <th class="sortable" data-column="complejos">
+                                <i class="fas fa-sort"></i> Complejos
+                            </th>
+                            <th class="sortable" data-column="medios">
+                                <i class="fas fa-sort"></i> Medios
+                            </th>
+                            <th class="sortable" data-column="simples">
+                                <i class="fas fa-sort"></i> Simples
+                            </th>
+                            <th class="sortable" data-column="equipos">
+                                <i class="fas fa-sort"></i> Equipos
+                            </th>
+                            <th>Tipos Principales</th>
+                            {% if mostrar_detalles %}<th>Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente, data in analisis_por_cliente.items() %}
+                        <tr>
+                            <td><strong>{{ cliente }}</strong></td>
+                            <td>
+                                <span class="badge bg-primary fs-6">{{ data.total_trabajos }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">{{ data.complejos }}</span>
+                                {% if data.total_trabajos > 0 %}
+                                <small class="text-muted">({{ (data.complejos / data.total_trabajos * 100)|round(1) }}%)</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ data.medios }}</span>
+                                {% if data.total_trabajos > 0 %}
+                                <small class="text-muted">({{ (data.medios / data.total_trabajos * 100)|round(1) }}%)</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ data.simples }}</span>
+                                {% if data.total_trabajos > 0 %}
+                                <small class="text-muted">({{ (data.simples / data.total_trabajos * 100)|round(1) }}%)</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ data.equipos_count }}</span>
+                            </td>
+                            <td>
+                                {% for tipo, cantidad in data.tipos_trabajo.items()[:3] %}
+                                <span class="badge bg-secondary me-1">{{ tipo }}: {{ cantidad }}</span>
+                                {% endfor %}
+                            </td>
+                            {% if mostrar_detalles %}
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" 
+                                        onclick="toggleDetallesCliente('{{ cliente }}')" 
+                                        title="Ver trabajos recientes">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% if mostrar_detalles and data.trabajos_detalle %}
+                        <tr id="detalles-{{ loop.index }}" style="display: none;">
+                            <td colspan="8">
+                                <div class="bg-light p-3 rounded">
+                                    <h6><i class="fas fa-history"></i> Trabajos Recientes - {{ cliente }}:</h6>
+                                    {% for trabajo in data.trabajos_detalle %}
+                                    <div class="mb-2 border-start border-3 ps-3 {% if trabajo.complejidad == 'complejo' %}border-danger{% elif trabajo.complejidad == 'medio' %}border-warning{% else %}border-success{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ trabajo.fecha }}</strong> - 
+                                                <span class="text-primary">{{ trabajo.equipo }}</span>
+                                                <span class="badge bg-{{ 'danger' if trabajo.complejidad == 'complejo' else 'warning' if trabajo.complejidad == 'medio' else 'success' }} ms-2">
+                                                    {{ trabajo.complejidad.title() }}
+                                                </span>
+                                                <span class="badge bg-secondary ms-1">{{ trabajo.tipo }}</span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ trabajo.descripcion }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No se encontraron trabajos de mano de obra con los filtros aplicados.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Datos para gráficos
+const complejidadData = {
+    labels: ['Complejos', 'Medios', 'Simples'],
+    data: [{{ stats.complejos }}, {{ stats.medios }}, {{ stats.simples }}]
+};
+
+const tiposData = {
+    labels: [{% for tipo in tipos_trabajo.keys() %}'{{ tipo }}'{{ ',' if not loop.last }}{% endfor %}],
+    data: [{% for cantidad in tipos_trabajo.values() %}{{ cantidad }}{{ ',' if not loop.last }}{% endfor %}]
+};
+
+// Colores
+const colores = {
+    danger: '#dc3545',
+    warning: '#ffc107', 
+    success: '#28a745',
+    primary: '#007bff',
+    info: '#17a2b8',
+    secondary: '#6c757d'
+};
+
+// Inicializar gráficos
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de complejidad
+    new Chart(document.getElementById('chartComplejidad'), {
+        type: 'doughnut',
+        data: {
+            labels: complejidadData.labels,
+            datasets: [{
+                data: complejidadData.data,
+                backgroundColor: [colores.danger, colores.warning, colores.success]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Gráfico de tipos
+    new Chart(document.getElementById('chartTipos'), {
+        type: 'pie',
+        data: {
+            labels: tiposData.labels,
+            datasets: [{
+                data: tiposData.data,
+                backgroundColor: [
+                    colores.primary, colores.info, colores.warning, 
+                    colores.success, colores.secondary
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+});
+
+// Función para mostrar/ocultar detalles de cliente
+function toggleDetallesCliente(cliente) {
+    const index = Array.from(document.querySelectorAll('table tbody tr')).findIndex(tr => 
+        tr.textContent.includes(cliente) && !tr.id.startsWith('detalles-')
+    );
+    
+    if (index >= 0) {
+        const elemento = document.getElementById('detalles-' + (Math.floor(index / 2) + 1));
+        if (elemento) {
+            elemento.style.display = elemento.style.display === 'none' ? 'table-row' : 'none';
+        }
+    }
+}
+</script>
+{% endblock %}

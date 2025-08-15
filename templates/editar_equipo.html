@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Equipo - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-edit"></i> Editar Equipo</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre del Equipo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ equipo.nombre }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="marca" class="form-label">Marca</label>
+                            <input type="text" class="form-control" id="marca" name="marca" value="{{ equipo.marca or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modelo" class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo" value="{{ equipo.modelo or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_serie" class="form-label">Número de Serie</label>
+                            <input type="text" class="form-control" id="numero_serie" name="numero_serie" value="{{ equipo.numero_serie or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_compra" class="form-label">Fecha de Compra</label>
+                            <input type="date" class="form-control" id="fecha_compra" name="fecha_compra" value="{{ equipo.fecha_compra or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="Activo" {% if equipo.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if equipo.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                                <option value="Mantenimiento" {% if equipo.estado == 'Mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                                <option value="Fuera de Servicio" {% if equipo.estado == 'Fuera de Servicio' %}selected{% endif %}>Fuera de Servicio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ubicacion" class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="{{ equipo.ubicacion or '' }}" placeholder="Ej: Taller Principal, Área 2, etc.">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Notas adicionales sobre el equipo...">{{ equipo.observaciones or '' }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('equipos') }}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Actualizar Equipo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

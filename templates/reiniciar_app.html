@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Reiniciar Aplicación - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-refresh"></i> Reiniciar Aplicación</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Advertencia -->
+        <div class="card border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    ¡ATENCIÓN! - Acción Irreversible
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-skull-crossbones"></i> Esta acción eliminará TODOS los datos:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Todos los equipos registrados</strong></li>
+                        <li><strong>Todo el historial de mantenimientos</strong></li>
+                        <li><strong>No se puede deshacer esta operación</strong></li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> ¿Cuándo usar esta función?</h6>
+                    <ul class="mb-0">
+                        <li>Cuando quieras importar un archivo Excel completamente nuevo</li>
+                        <li>Para limpiar datos de prueba y empezar de cero</li>
+                        <li>Si hay datos duplicados o incorrectos que quieres eliminar</li>
+                        <li>Para resetear completamente la aplicación</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información actual -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database"></i> 
+                    Estado Actual de la Base de Datos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded">
+                            <i class="fas fa-cogs fa-2x text-primary mb-2"></i>
+                            <h4 class="text-primary" id="equipos-count">{{ total_equipos or 0 }}</h4>
+                            <p class="text-muted mb-0">Equipos Registrados</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded">
+                            <i class="fas fa-wrench fa-2x text-success mb-2"></i>
+                            <h4 class="text-success" id="mantenimientos-count">{{ total_mantenimientos or 0 }}</h4>
+                            <p class="text-muted mb-0">Mantenimientos Registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de confirmación -->
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-trash-alt fa-4x text-danger mb-4"></i>
+                
+                <h4 class="text-danger mb-3">Confirmar Reinicio de Aplicación</h4>
+                
+                <p class="text-muted mb-4">
+                    Esta acción eliminará permanentemente todos los equipos y mantenimientos de la base de datos.
+                    <br><strong>Una vez realizada, no se puede deshacer.</strong>
+                </p>
+
+                <form method="POST" onsubmit="return confirmarReinicio()">
+                    <div class="mb-4">
+                        <div class="form-check d-inline-block">
+                            <input class="form-check-input" type="checkbox" id="confirmar" name="confirmar" required>
+                            <label class="form-check-label text-danger" for="confirmar">
+                                <strong>Entiendo que esta acción es irreversible y eliminará todos mis datos</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 col-6 mx-auto">
+                        <button type="submit" class="btn btn-danger btn-lg" id="btn-reiniciar" disabled>
+                            <i class="fas fa-trash-alt"></i> 
+                            REINICIAR APLICACIÓN
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pasos después del reinicio -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-list-ol"></i> 
+                    Pasos Después del Reinicio
+                </h6>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Preparar archivo Excel:</strong> Asegúrate de que tu nuevo archivo Excel tenga las columnas EQUIPOS, FECHA, REPUESTOS, MANO DE OBRA</li>
+                    <li><strong>Colocar archivo:</strong> Guarda tu archivo como "Equipos.xlsx" en el directorio de la aplicación</li>
+                    <li><strong>Importar datos:</strong> Ve a "Importar Excel" y carga los nuevos datos</li>
+                    <li><strong>Verificar:</strong> Revisa que los equipos y mantenimientos se hayan importado correctamente</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Habilitar botón solo cuando se marca el checkbox
+document.getElementById('confirmar').addEventListener('change', function() {
+    document.getElementById('btn-reiniciar').disabled = !this.checked;
+});
+
+// Confirmación adicional
+function confirmarReinicio() {
+    showConfirm(
+        '¿Estás completamente seguro de que quieres eliminar TODOS los datos?\n\nEsta acción NO se puede deshacer.',
+        function(confirmed) {
+            if (confirmed) {
+                // Continuar con el reinicio
+                return true;
+            }
+            return false;
+        },
+        {
+            titulo: 'Reiniciar Aplicación',
+            confirmar: 'Eliminar Todo',
+            tipo: 'danger'
+        }
+    );
+    return false; // Evitar envío inmediato del formulario
+}
+
+// Actualizar contadores dinámicamente
+function actualizarContadores() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('equipos-count').textContent = data.equipos || 0;
+            document.getElementById('mantenimientos-count').textContent = data.mantenimientos || 0;
+        })
+        .catch(error => console.log('No se pudieron cargar las estadísticas'));
+}
+
+// Actualizar al cargar la página
+document.addEventListener('DOMContentLoaded', actualizarContadores);
+</script>
+
+{% endblock %}

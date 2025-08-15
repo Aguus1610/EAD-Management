@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Usuario - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user-plus"></i> Nuevo Usuario</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('gestionar_usuarios') }}">Gestión de Usuarios</a></li>
+            <li class="breadcrumb-item active">Nuevo Usuario</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Información del Nuevo Usuario
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="nuevoUsuarioForm">
+                    <div class="row">
+                        <!-- Información de acceso -->
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-key me-2"></i>Credenciales de Acceso
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Nombre de Usuario *
+                                </label>
+                                <input type="text" class="form-control" id="username" name="username" required
+                                       placeholder="usuario123" pattern="[a-zA-Z0-9_]+" minlength="3">
+                                <div class="form-text">Solo letras, números y guiones bajos. Mínimo 3 caracteres.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope me-2"></i>Correo Electrónico *
+                                </label>
+                                <input type="email" class="form-control" id="email" name="email" required
+                                       placeholder="usuario@empresa.com">
+                                <div class="form-text">Se usará para notificaciones y recuperación de cuenta.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>Contraseña *
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" required
+                                           minlength="6" placeholder="Mínimo 6 caracteres">
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-strength mt-2">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" id="strengthBar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small class="form-text" id="strengthText">Ingresa una contraseña</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información personal -->
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-id-card me-2"></i>Información Personal
+                            </h6>
+
+                            <div class="mb-3">
+                                <label for="nombre_completo" class="form-label">
+                                    <i class="fas fa-user-tag me-2"></i>Nombre Completo *
+                                </label>
+                                <input type="text" class="form-control" id="nombre_completo" name="nombre_completo" required
+                                       placeholder="Juan Pérez López">
+                                <div class="form-text">Nombre y apellidos del usuario.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="rol" class="form-label">
+                                    <i class="fas fa-user-shield me-2"></i>Rol del Usuario *
+                                </label>
+                                <select class="form-select" id="rol" name="rol" required>
+                                    <option value="">Selecciona un rol...</option>
+                                    {% for rol in roles %}
+                                    <option value="{{ rol.nombre }}" data-descripcion="{{ rol.descripcion }}">
+                                        {{ rol.nombre.title() }} - {{ rol.descripcion }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text" id="rolDescripcion">Selecciona el rol para ver los permisos.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="activo" name="activo" checked>
+                                    <label class="form-check-label" for="activo">
+                                        <i class="fas fa-toggle-on me-2"></i>Usuario Activo
+                                    </label>
+                                </div>
+                                <div class="form-text">Si está desactivado, el usuario no podrá iniciar sesión.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel de permisos -->
+                    <div class="card mt-4" id="permisosPanel" style="display: none;">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Permisos del Rol Seleccionado
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="permisosContent">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('gestionar_usuarios') }}" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="button" class="btn btn-outline-info me-md-2" onclick="generarCredenciales()">
+                                    <i class="fas fa-magic me-2"></i>Generar Automático
+                                </button>
+                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                    <i class="fas fa-save me-2"></i>Crear Usuario
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel de ayuda -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Guía de Roles y Permisos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">👑 Administrador</h6>
+                        <p class="small">Acceso completo a todas las funciones del sistema.</p>
+                        
+                        <h6 class="text-warning">🏢 Gerente</h6>
+                        <p class="small">Gestión completa de operaciones, reportes y algunos usuarios.</p>
+                        
+                        <h6 class="text-info">🔧 Técnico</h6>
+                        <p class="small">Manejo de equipos, mantenimientos y consulta de repuestos.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-secondary">📋 Recepcionista</h6>
+                        <p class="small">Gestión de clientes y registro de mantenimientos básicos.</p>
+                        
+                        <h6 class="text-muted">👁️ Visor</h6>
+                        <p class="small">Solo lectura en todas las secciones del sistema.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('nuevoUsuarioForm');
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const rolSelect = document.getElementById('rol');
+    const permisosPanel = document.getElementById('permisosPanel');
+    const permisosContent = document.getElementById('permisosContent');
+    const rolDescripcion = document.getElementById('rolDescripcion');
+
+    // Toggle mostrar/ocultar contraseña
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        const icon = this.querySelector('i');
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+    });
+
+    // Verificador de fortaleza de contraseña
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+        updateStrengthIndicator(strength);
+    });
+
+    // Mostrar permisos al seleccionar rol
+    rolSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const descripcion = selectedOption.dataset.descripcion;
+            rolDescripcion.textContent = descripcion;
+            mostrarPermisos(selectedOption.value);
+            permisosPanel.style.display = 'block';
+        } else {
+            rolDescripcion.textContent = 'Selecciona el rol para ver los permisos.';
+            permisosPanel.style.display = 'none';
+        }
+    });
+
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        if (!validarFormulario()) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loading
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Creando...';
+        submitBtn.disabled = true;
+    });
+
+    function calculatePasswordStrength(password) {
+        let score = 0;
+        let feedback = [];
+
+        if (password.length === 0) {
+            return { score: 0, feedback: ['Ingresa una contraseña'], level: 'none' };
+        }
+
+        // Longitud
+        if (password.length >= 8) score += 25;
+        else feedback.push('Al menos 8 caracteres');
+
+        // Letras minúsculas
+        if (/[a-z]/.test(password)) score += 25;
+        else feedback.push('Incluye letras minúsculas');
+
+        // Letras mayúsculas
+        if (/[A-Z]/.test(password)) score += 25;
+        else feedback.push('Incluye letras mayúsculas');
+
+        // Números
+        if (/\d/.test(password)) score += 15;
+        else feedback.push('Incluye números');
+
+        // Símbolos
+        if (/[^A-Za-z0-9]/.test(password)) score += 10;
+        else feedback.push('Incluye símbolos');
+
+        let level, className;
+        if (score < 30) {
+            level = 'Muy débil';
+            className = 'bg-danger';
+        } else if (score < 60) {
+            level = 'Débil';
+            className = 'bg-warning';
+        } else if (score < 80) {
+            level = 'Buena';
+            className = 'bg-info';
+        } else {
+            level = 'Excelente';
+            className = 'bg-success';
+        }
+
+        return { score, feedback, level, className };
+    }
+
+    function updateStrengthIndicator(strength) {
+        strengthBar.style.width = strength.score + '%';
+        strengthBar.className = 'progress-bar ' + (strength.className || '');
+        
+        if (strength.score === 0) {
+            strengthText.textContent = 'Ingresa una contraseña';
+            strengthText.className = 'form-text text-muted';
+        } else {
+            strengthText.textContent = `Fortaleza: ${strength.level}`;
+            strengthText.className = 'form-text text-' + 
+                (strength.className === 'bg-danger' ? 'danger' :
+                 strength.className === 'bg-warning' ? 'warning' :
+                 strength.className === 'bg-info' ? 'info' : 'success');
+        }
+    }
+
+    function mostrarPermisos(rol) {
+        const permisos = {
+            'admin': {
+                'all': 'Acceso completo a todas las funciones',
+                'color': 'danger'
+            },
+            'gerente': {
+                'clientes': 'Gestión completa de clientes',
+                'equipos': 'Gestión completa de equipos',
+                'mantenimientos': 'Gestión completa de mantenimientos',
+                'repuestos': 'Gestión completa de repuestos',
+                'reportes': 'Acceso a todos los reportes',
+                'usuarios': 'Solo lectura de usuarios',
+                'color': 'warning'
+            },
+            'tecnico': {
+                'clientes': 'Solo lectura',
+                'equipos': 'Gestión completa',
+                'mantenimientos': 'Gestión completa',
+                'repuestos': 'Solo lectura',
+                'reportes': 'Solo lectura',
+                'color': 'info'
+            },
+            'recepcionista': {
+                'clientes': 'Gestión completa',
+                'equipos': 'Solo lectura',
+                'mantenimientos': 'Crear y leer',
+                'repuestos': 'Solo lectura',
+                'reportes': 'Solo lectura',
+                'color': 'secondary'
+            },
+            'visor': {
+                'clientes': 'Solo lectura',
+                'equipos': 'Solo lectura',
+                'mantenimientos': 'Solo lectura',
+                'repuestos': 'Solo lectura',
+                'reportes': 'Solo lectura',
+                'color': 'light'
+            }
+        };
+
+        const rolePerms = permisos[rol];
+        if (!rolePerms) return;
+
+        let html = '<div class="row">';
+        
+        Object.keys(rolePerms).forEach(key => {
+            if (key === 'color') return;
+            
+            const valor = rolePerms[key];
+            const icon = getPermissionIcon(key);
+            
+            html += `
+                <div class="col-md-6 mb-2">
+                    <div class="d-flex align-items-center">
+                        <i class="${icon} text-${rolePerms.color} me-2"></i>
+                        <div>
+                            <strong class="text-capitalize">${key}:</strong>
+                            <span class="ms-1">${valor}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        permisosContent.innerHTML = html;
+    }
+
+    function getPermissionIcon(permission) {
+        const icons = {
+            'all': 'fas fa-crown',
+            'clientes': 'fas fa-users',
+            'equipos': 'fas fa-cogs',
+            'mantenimientos': 'fas fa-wrench',
+            'repuestos': 'fas fa-boxes',
+            'reportes': 'fas fa-chart-bar',
+            'usuarios': 'fas fa-user-shield'
+        };
+        return icons[permission] || 'fas fa-circle';
+    }
+
+    function validarFormulario() {
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const nombre = document.getElementById('nombre_completo').value.trim();
+        const rol = document.getElementById('rol').value;
+
+        if (!username || !email || !password || !nombre || !rol) {
+            window.notificationSystem?.error('Completa todos los campos obligatorios');
+            return false;
+        }
+
+        if (password.length < 6) {
+            window.notificationSystem?.error('La contraseña debe tener al menos 6 caracteres');
+            return false;
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            window.notificationSystem?.error('El nombre de usuario solo puede contener letras, números y guiones bajos');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Función para generar credenciales automáticas
+    window.generarCredenciales = function() {
+        const nombres = ['admin', 'user', 'tech', 'manager', 'guest'];
+        const numeros = Math.floor(Math.random() * 1000);
+        const usernameGenerado = nombres[Math.floor(Math.random() * nombres.length)] + numeros;
+        
+        const passwordGenerada = generarPassword(8);
+        
+        document.getElementById('username').value = usernameGenerado;
+        document.getElementById('password').value = passwordGenerada;
+        
+        // Actualizar indicador de fortaleza
+        const strength = calculatePasswordStrength(passwordGenerada);
+        updateStrengthIndicator(strength);
+        
+        if (window.notificationSystem) {
+            window.notificationSystem.info('Credenciales generadas automáticamente');
+        }
+    };
+
+    function generarPassword(length) {
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < length; i++) {
+            password += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+        return password;
+    }
+
+    // Auto-focus en el primer campo
+    document.getElementById('username').focus();
+});
+</script>
+{% endblock %}

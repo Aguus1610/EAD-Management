@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración General - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-building"></i> Configuración General de la Empresa</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('configuracion_app') }}">Configuración</a></li>
+            <li class="breadcrumb-item active">General</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Configuración General
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% for config in configuraciones %}
+                    <div class="mb-3">
+                        <label for="{{ config.clave }}" class="form-label">
+                            {{ config.descripcion or config.clave.replace('_', ' ').title() }}
+                        </label>
+                        
+                        {% if config.tipo == 'boolean' %}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="{{ config.clave }}" 
+                                   name="{{ config.clave }}" {{ 'checked' if config.valor == 'true' }}>
+                            <label class="form-check-label" for="{{ config.clave }}">
+                                Habilitado
+                            </label>
+                        </div>
+                        {% elif config.tipo == 'number' %}
+                        <input type="number" class="form-control" id="{{ config.clave }}" 
+                               name="{{ config.clave }}" value="{{ config.valor or '' }}">
+                        {% else %}
+                        <input type="text" class="form-control" id="{{ config.clave }}" 
+                               name="{{ config.clave }}" value="{{ config.valor or '' }}"
+                               {% if config.clave == 'logo_empresa' %}placeholder="https://ejemplo.com/logo.png"{% endif %}>
+                        {% endif %}
+                        
+                        {% if config.descripcion %}
+                        <div class="form-text">{{ config.descripcion }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('configuracion_app') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Configuraciones Importantes:</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Nombre Empresa:</strong> Se muestra en reportes y títulos</li>
+                    <li><strong>Logo Empresa:</strong> URL de imagen (PNG/JPG recomendado)</li>
+                    <li><strong>Zona Horaria:</strong> Para fechas y horarios correctos</li>
+                    <li><strong>Idioma:</strong> Idioma predeterminado del sistema</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Formato de Logo:</h6>
+                <ul class="list-unstyled">
+                    <li>• Tamaño recomendado: 200x80px</li>
+                    <li>• Formato: PNG con transparencia</li>
+                    <li>• URL pública accesible</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Tip:</strong> Los cambios se aplican inmediatamente en todo el sistema.
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Zonas Horarias Comunes
+                </h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <ul class="list-unstyled mb-0">
+                        <li><code>America/Mexico_City</code> - México (CDMX)</li>
+                        <li><code>America/Tijuana</code> - México (Tijuana)</li>
+                        <li><code>America/Cancun</code> - México (Cancún)</li>
+                        <li><code>America/New_York</code> - Estados Unidos (Este)</li>
+                        <li><code>America/Los_Angeles</code> - Estados Unidos (Oeste)</li>
+                        <li><code>Europe/Madrid</code> - España</li>
+                        <li><code>America/Buenos_Aires</code> - Argentina</li>
+                    </ul>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Vista previa del logo
+    const logoInput = document.getElementById('logo_empresa');
+    if (logoInput) {
+        logoInput.addEventListener('input', function() {
+            const url = this.value;
+            if (url && url.startsWith('http')) {
+                // Crear vista previa (opcional)
+                console.log('Logo URL:', url);
+            }
+        });
+    }
+    
+    // Validación de zona horaria
+    const timezoneInput = document.getElementById('zona_horaria');
+    if (timezoneInput) {
+        timezoneInput.addEventListener('blur', function() {
+            const timezone = this.value;
+            try {
+                // Validar zona horaria
+                Intl.DateTimeFormat(undefined, {timeZone: timezone});
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } catch (e) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

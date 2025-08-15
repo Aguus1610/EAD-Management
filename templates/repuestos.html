@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Repuestos - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-boxes"></i> Gestión de Repuestos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('nuevo_repuesto') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Repuesto
+        </a>
+    </div>
+</div>
+
+<!-- Alertas de stock bajo -->
+{% if alertas_stock %}
+<div class="alert alert-warning" role="alert">
+    <h6><i class="fas fa-exclamation-triangle"></i> Alertas de Stock Bajo</h6>
+    <div class="row">
+        {% for repuesto in alertas_stock %}
+        <div class="col-md-4 mb-2">
+            <span class="badge bg-warning text-dark">{{ repuesto.nombre }}</span>
+            <small class="text-muted">({{ repuesto.stock_actual }}/{{ repuesto.stock_minimo }})</small>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        {% if repuestos %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="repuestosTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="sortable" data-column="nombre">
+                                <i class="fas fa-sort"></i> Nombre
+                            </th>
+                            <th class="sortable" data-column="codigo">
+                                <i class="fas fa-sort"></i> Código
+                            </th>
+                            <th class="sortable" data-column="stock_actual">
+                                <i class="fas fa-sort"></i> Stock Actual
+                            </th>
+                            <th class="sortable" data-column="stock_minimo">
+                                <i class="fas fa-sort"></i> Stock Mínimo
+                            </th>
+                            <th class="sortable" data-column="precio_unitario">
+                                <i class="fas fa-sort"></i> Precio
+                            </th>
+                            <th class="sortable" data-column="proveedor">
+                                <i class="fas fa-sort"></i> Proveedor
+                            </th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for repuesto in repuestos %}
+                        <tr>
+                            <td><strong>{{ repuesto.nombre }}</strong></td>
+                            <td>{{ repuesto.codigo or '-' }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-{{ 'danger' if repuesto.stock_actual <= repuesto.stock_minimo and repuesto.stock_minimo > 0 else 'success' }}">
+                                        {{ repuesto.stock_actual }}
+                                    </span>
+                                    
+                                    <!-- Control rápido de stock -->
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary ajustar-stock" 
+                                                data-id="{{ repuesto.id }}"
+                                                data-stock="{{ repuesto.stock_actual - 1 }}"
+                                                data-nombre="{{ repuesto.nombre }}"
+                                                data-accion="decrementar"
+                                                {% if repuesto.stock_actual <= 0 %}disabled{% endif %}
+                                                title="Reducir stock">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary ajustar-stock" 
+                                                data-id="{{ repuesto.id }}"
+                                                data-stock="{{ repuesto.stock_actual + 1 }}"
+                                                data-nombre="{{ repuesto.nombre }}"
+                                                data-accion="incrementar"
+                                                title="Aumentar stock">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning mostrar-modal-stock" 
+                                                data-id="{{ repuesto.id }}"
+                                                data-stock="{{ repuesto.stock_actual }}"
+                                                data-nombre="{{ repuesto.nombre }}"
+                                                title="Ajuste personalizado">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ repuesto.stock_minimo }}</td>
+                            <td>
+                                {% if repuesto.precio_unitario %}
+                                    ${{ "%.2f"|format(repuesto.precio_unitario) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ repuesto.proveedor or '-' }}</td>
+                            <td>
+                                {% if repuesto.stock_actual <= repuesto.stock_minimo and repuesto.stock_minimo > 0 %}
+                                    <span class="badge bg-warning">Stock Bajo</span>
+                                {% elif repuesto.stock_actual == 0 %}
+                                    <span class="badge bg-danger">Agotado</span>
+                                {% else %}
+                                    <span class="badge bg-success">Disponible</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('editar_repuesto', id=repuesto.id) }}" 
+                                       class="btn btn-sm btn-warning" title="Editar repuesto">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger eliminar-repuesto" 
+                                            data-id="{{ repuesto.id }}"
+                                            data-nombre="{{ repuesto.nombre }}"
+                                            data-stock="{{ repuesto.stock_actual }}"
+                                            title="Eliminar repuesto">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No hay repuestos registrados</h5>
+                <p class="text-muted">Comienza agregando repuestos para gestionar tu inventario.</p>
+                <a href="{{ url_for('nuevo_repuesto') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Primer Repuesto
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+{% if repuestos %}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-boxes fa-2x text-primary mb-2"></i>
+                <h4 class="text-primary">{{ repuestos|length }}</h4>
+                <p class="text-muted mb-0">Total Repuestos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h4 class="text-warning">{{ alertas_stock|length }}</h4>
+                <p class="text-muted mb-0">Stock Bajo</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-ban fa-2x text-danger mb-2"></i>
+                <h4 class="text-danger">{{ repuestos|selectattr('stock_actual', 'equalto', 0)|list|length }}</h4>
+                <p class="text-muted mb-0">Agotados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                <h4 class="text-success">
+                    ${{ "%.2f"|format(valor_total_inventario) }}
+                </h4>
+                <p class="text-muted mb-0">Valor Total Inventario</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para ajuste de stock personalizado -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajustar Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="stockForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="modalNuevoStock" class="form-label">Nuevo Stock</label>
+                        <input type="number" class="form-control" id="modalNuevoStock" name="nuevo_stock" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalMotivo" class="form-label">Motivo</label>
+                        <select class="form-control" id="modalMotivo" name="motivo">
+                            <option value="Ajuste manual">Ajuste manual</option>
+                            <option value="Reposición">Reposición</option>
+                            <option value="Corrección de inventario">Corrección de inventario</option>
+                            <option value="Daño/pérdida">Daño/pérdida</option>
+                            <option value="Venta">Venta</option>
+                            <option value="Uso en mantenimiento">Uso en mantenimiento</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Ajustar Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales para el modal
+let currentRepuestoId = null;
+let stockModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar modal
+    stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
+});
+
+// Función para ajuste rápido de stock
+function ajustarStockRapido(repuestoId, nuevoStock, nombre) {
+    if (nuevoStock < 0) return;
+    
+    const formData = new FormData();
+    formData.append('nuevo_stock', nuevoStock);
+    formData.append('motivo', 'Ajuste rápido');
+    
+    fetch(`/repuestos/${repuestoId}/ajustar_stock`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            if (window.showError) {
+                window.showError('Error al ajustar el stock');
+            } else {
+                alert('Error al ajustar el stock');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.showError) {
+            window.showError('Error al ajustar el stock');
+        } else {
+            alert('Error al ajustar el stock');
+        }
+    });
+}
+
+// Función para mostrar modal de ajuste personalizado
+function mostrarModalStock(repuestoId, stockActual, nombre) {
+    currentRepuestoId = repuestoId;
+    document.getElementById('modalNuevoStock').value = stockActual;
+    document.querySelector('.modal-title').textContent = `Ajustar Stock - ${nombre}`;
+    document.getElementById('stockForm').action = `/repuestos/${repuestoId}/ajustar_stock`;
+    stockModal.show();
+}
+
+// Event listeners usando delegación de eventos
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar clics en botones de ajustar stock
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.ajustar-stock')) {
+            const button = e.target.closest('.ajustar-stock');
+            const id = button.dataset.id;
+            const stock = parseInt(button.dataset.stock);
+            const nombre = button.dataset.nombre;
+            const accion = button.dataset.accion;
+            
+            ajustarStockRapido(id, stock, nombre);
+        }
+        
+        // Manejar clics en mostrar modal stock
+        if (e.target.closest('.mostrar-modal-stock')) {
+            const button = e.target.closest('.mostrar-modal-stock');
+            const id = button.dataset.id;
+            const stock = parseInt(button.dataset.stock);
+            const nombre = button.dataset.nombre;
+            
+            mostrarModalStock(id, stock, nombre);
+        }
+        
+        // Manejar clics en eliminar repuesto
+        if (e.target.closest('.eliminar-repuesto')) {
+            const button = e.target.closest('.eliminar-repuesto');
+            const id = button.dataset.id;
+            const nombre = button.dataset.nombre;
+            const stock = button.dataset.stock;
+            
+            confirmarEliminacionRepuesto(id, nombre, stock);
+        }
+    });
+});
+
+// El ordenamiento ya está manejado por table-sort.js
+
+// Función para confirmar eliminación de repuesto
+function confirmarEliminacionRepuesto(id, nombre, stockActual) {
+    // Actualizar información en el modal
+    document.getElementById('repuestoNombreInfo').textContent = nombre;
+    document.getElementById('stockInfo').textContent = stockActual + ' unidades';
+    document.getElementById('formEliminarRepuesto').action = `/repuestos/${id}/eliminar`;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('eliminarRepuestoModal'));
+    modal.show();
+}
+</script>
+
+<!-- Modal de Confirmación de Eliminación de Repuesto -->
+<div class="modal fade" id="eliminarRepuestoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación de Repuesto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de que quieres eliminar este repuesto?</strong></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning"></i> Esta acción no se puede deshacer.
+                    <br><strong>Repuesto:</strong> <span id="repuestoNombreInfo"></span>
+                    <br><strong>Stock actual:</strong> <span id="stockInfo"></span>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Condiciones para eliminar:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>El repuesto no debe tener stock actual (debe estar en 0)</li>
+                        <li>No debe tener movimientos de stock registrados (por trazabilidad)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form id="formEliminarRepuesto" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

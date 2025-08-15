@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoría del Sistema - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-history"></i> Auditoría del Sistema</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item active">Auditoría</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Estadísticas de auditoría -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-list-alt text-primary" style="font-size: 2rem;"></i>
+                    <div class="ms-3">
+                        <h3 class="mb-0">{{ stats.total_registros }}</h3>
+                        <p class="text-muted mb-0">Total Registros</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-calendar-day text-success" style="font-size: 2rem;"></i>
+                    <div class="ms-3">
+                        <h3 class="mb-0">{{ stats.registros_hoy }}</h3>
+                        <p class="text-muted mb-0">Actividad Hoy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-users text-info" style="font-size: 2rem;"></i>
+                    <div class="ms-3">
+                        <h3 class="mb-0">{{ stats.usuarios_activos_hoy }}</h3>
+                        <p class="text-muted mb-0">Usuarios Activos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="fas fa-fire text-warning" style="font-size: 2rem;"></i>
+                    <div class="ms-3">
+                        <h6 class="mb-0">Acción más común:</h6>
+                        {% if stats.accion_mas_comun %}
+                        <small class="text-muted">{{ stats.accion_mas_comun.accion }}</small>
+                        <br><small class="badge bg-warning">{{ stats.accion_mas_comun.total }} veces</small>
+                        {% else %}
+                        <small class="text-muted">Sin datos</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos de estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Actividad Últimos 30 Días
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="actividadChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Acciones Más Comunes
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="accionesChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-friends me-2"></i>
+                    Usuarios Más Activos
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="usuariosChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Actividad por Hora (Última Semana)
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="horariaChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros avanzados -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="fas fa-filter me-2"></i>
+            Filtros de Búsqueda
+        </h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3" id="filtrosForm">
+            <div class="col-md-3">
+                <label for="busqueda" class="form-label">Búsqueda General</label>
+                <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                       value="{{ busqueda }}" placeholder="Acción, tabla, usuario...">
+            </div>
+            <div class="col-md-2">
+                <label for="usuario_id" class="form-label">Usuario</label>
+                <select class="form-select" id="usuario_id" name="usuario_id">
+                    <option value="">Todos</option>
+                    {% for usuario in usuarios %}
+                    <option value="{{ usuario.id }}" {{ 'selected' if filtro_usuario == usuario.id|string }}>
+                        {{ usuario.nombre_completo }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="accion" class="form-label">Acción</label>
+                <select class="form-select" id="accion" name="accion">
+                    <option value="">Todas</option>
+                    {% for accion in acciones %}
+                    <option value="{{ accion.accion }}" {{ 'selected' if filtro_accion == accion.accion }}>
+                        {{ accion.accion }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="tabla" class="form-label">Tabla</label>
+                <select class="form-select" id="tabla" name="tabla">
+                    <option value="">Todas</option>
+                    {% for tabla in tablas %}
+                    <option value="{{ tabla.tabla_afectada }}" {{ 'selected' if filtro_tabla == tabla.tabla_afectada }}>
+                        {{ tabla.tabla_afectada }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1-5">
+                <label for="fecha_inicio" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+            </div>
+            <div class="col-md-1-5">
+                <label for="fecha_fin" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+            </div>
+        </form>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button type="submit" form="filtrosForm" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{{ url_for('auditoria') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                    <button type="button" class="btn btn-outline-info" onclick="establecerFiltrosRapidos('hoy')">
+                        <i class="fas fa-calendar-day"></i> Hoy
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="establecerFiltrosRapidos('semana')">
+                        <i class="fas fa-calendar-week"></i> Esta Semana
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="establecerFiltrosRapidos('mes')">
+                        <i class="fas fa-calendar-alt"></i> Este Mes
+                    </button>
+                    <div class="ms-auto">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-download"></i> Exportar
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportarAuditoria('pdf')">
+                                    <i class="fas fa-file-pdf"></i> Reporte PDF
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportarAuditoria('csv')">
+                                    <i class="fas fa-file-csv"></i> Exportar CSV
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportarAuditoria('excel')">
+                                    <i class="fas fa-file-excel"></i> Exportar Excel
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="window.print()">
+                                    <i class="fas fa-print"></i> Imprimir
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de registros de auditoría -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-table"></i> Registros de Auditoría
+            <span class="badge bg-primary">{{ total_registros }}</span>
+        </h5>
+        <div>
+            Página {{ page }} de {{ total_pages }} ({{ per_page }} por página)
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if registros %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="auditoriaTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-clock"></i> Fecha/Hora</th>
+                        <th><i class="fas fa-user"></i> Usuario</th>
+                        <th><i class="fas fa-bolt"></i> Acción</th>
+                        <th><i class="fas fa-table"></i> Tabla</th>
+                        <th><i class="fas fa-hashtag"></i> Registro</th>
+                        <th><i class="fas fa-globe"></i> IP Address</th>
+                        <th><i class="fas fa-info-circle"></i> Detalles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                    <tr>
+                        <td>
+                            <div class="small">
+                                <div class="fw-bold">{{ registro.fecha_accion[:10] }}</div>
+                                <div class="text-muted">{{ registro.fecha_accion[11:19] }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if registro.username %}
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ registro.username }}</div>
+                                    <small class="text-muted">{{ registro.nombre_completo }}</small>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Sistema</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 
+                                'success' if 'crear' in registro.accion or 'login' in registro.accion else
+                                'warning' if 'editar' in registro.accion or 'actualizar' in registro.accion else
+                                'danger' if 'eliminar' in registro.accion or 'desactivar' in registro.accion else
+                                'info' if 'logout' in registro.accion else 'secondary'
+                            }}">
+                                {{ registro.accion }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if registro.tabla_afectada %}
+                            <span class="badge bg-light text-dark">{{ registro.tabla_afectada }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if registro.registro_id %}
+                            <code>#{{ registro.registro_id }}</code>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="font-monospace">{{ registro.ip_address or '-' }}</small>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('detalle_auditoria', registro_id=registro.id) }}" 
+                               class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Paginación de auditoría">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('auditoria', page=page-1, usuario_id=filtro_usuario, accion=filtro_accion, tabla=filtro_tabla, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, busqueda=busqueda) }}">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                    <li class="page-item {{ 'active' if p == page }}">
+                        <a class="page-link" href="{{ url_for('auditoria', page=p, usuario_id=filtro_usuario, accion=filtro_accion, tabla=filtro_tabla, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, busqueda=busqueda) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('auditoria', page=page+1, usuario_id=filtro_usuario, accion=filtro_accion, tabla=filtro_tabla, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, busqueda=busqueda) }}">
+                            Siguiente <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">No se encontraron registros</h5>
+            <p class="text-muted">
+                {% if busqueda or filtro_usuario or filtro_accion or filtro_tabla or fecha_inicio or fecha_fin %}
+                Intenta ajustar los filtros de búsqueda
+                {% else %}
+                No hay registros de auditoría disponibles
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+}
+
+.col-md-1-5 {
+    flex: 0 0 auto;
+    width: 12.5%;
+}
+
+@media print {
+    .btn, .dropdown, .page-header .breadcrumb, .card:first-child, .card:nth-child(2), nav {
+        display: none !important;
+    }
+    
+    .page-header h1 {
+        margin-bottom: 20px;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+let actividadChart, accionesChart, usuariosChart, horariaChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar estadísticas y crear gráficos
+    cargarEstadisticas();
+    
+    // Filtros rápidos
+    window.establecerFiltrosRapidos = function(periodo) {
+        const hoy = new Date();
+        let fechaInicio;
+        
+        switch(periodo) {
+            case 'hoy':
+                fechaInicio = hoy.toISOString().split('T')[0];
+                document.getElementById('fecha_inicio').value = fechaInicio;
+                document.getElementById('fecha_fin').value = fechaInicio;
+                break;
+            case 'semana':
+                const inicioSemana = new Date(hoy.setDate(hoy.getDate() - hoy.getDay()));
+                document.getElementById('fecha_inicio').value = inicioSemana.toISOString().split('T')[0];
+                document.getElementById('fecha_fin').value = new Date().toISOString().split('T')[0];
+                break;
+            case 'mes':
+                const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                document.getElementById('fecha_inicio').value = inicioMes.toISOString().split('T')[0];
+                document.getElementById('fecha_fin').value = new Date().toISOString().split('T')[0];
+                break;
+        }
+        
+        document.getElementById('filtrosForm').submit();
+    };
+    
+    // Exportar auditoría
+    window.exportarAuditoria = function(formato) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('formato', formato);
+        
+        if (formato === 'csv') {
+            exportTableToCSV('auditoria.csv');
+        } else {
+            window.notificationSystem?.info('Función de exportación en desarrollo');
+        }
+    };
+    
+    // Auto-submit en cambios de filtro
+    ['usuario_id', 'accion', 'tabla', 'fecha_inicio', 'fecha_fin'].forEach(id => {
+        document.getElementById(id).addEventListener('change', function() {
+            document.getElementById('filtrosForm').submit();
+        });
+    });
+    
+    // Búsqueda con delay
+    let searchTimeout;
+    document.getElementById('busqueda').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('filtrosForm').submit();
+        }, 800);
+    });
+    
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function cargarEstadisticas() {
+    fetch('/api/auditoria/estadisticas')
+        .then(response => response.json())
+        .then(data => {
+            crearGraficos(data);
+        })
+        .catch(error => {
+            console.error('Error cargando estadísticas:', error);
+        });
+}
+
+function crearGraficos(data) {
+    // Gráfico de actividad diaria
+    const ctxActividad = document.getElementById('actividadChart').getContext('2d');
+    actividadChart = new Chart(ctxActividad, {
+        type: 'line',
+        data: {
+            labels: data.actividad_diaria.map(d => d.fecha),
+            datasets: [{
+                label: 'Acciones por día',
+                data: data.actividad_diaria.map(d => d.total),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Gráfico de acciones comunes
+    const ctxAcciones = document.getElementById('accionesChart').getContext('2d');
+    accionesChart = new Chart(ctxAcciones, {
+        type: 'doughnut',
+        data: {
+            labels: data.acciones_comunes.map(d => d.accion),
+            datasets: [{
+                data: data.acciones_comunes.map(d => d.total),
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Gráfico de usuarios activos
+    const ctxUsuarios = document.getElementById('usuariosChart').getContext('2d');
+    usuariosChart = new Chart(ctxUsuarios, {
+        type: 'bar',
+        data: {
+            labels: data.usuarios_activos.map(d => d.nombre_completo.split(' ')[0]),
+            datasets: [{
+                label: 'Acciones realizadas',
+                data: data.usuarios_activos.map(d => d.total),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Gráfico de actividad horaria
+    const ctxHoraria = document.getElementById('horariaChart').getContext('2d');
+    horariaChart = new Chart(ctxHoraria, {
+        type: 'bar',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0') + ':00'),
+            datasets: [{
+                label: 'Actividad por hora',
+                data: Array.from({length: 24}, (_, i) => {
+                    const hora = i.toString().padStart(2, '0');
+                    const encontrado = data.actividad_horaria.find(d => d.hora === hora);
+                    return encontrado ? encontrado.total : 0;
+                }),
+                backgroundColor: 'rgba(255, 206, 86, 0.8)',
+                borderColor: 'rgba(255, 206, 86, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function exportTableToCSV(filename) {
+    const table = document.getElementById('auditoriaTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    
+    const csvContent = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('th, td'));
+        return cells.slice(0, -1).map(cell => { // Excluir última columna (acciones)
+            const text = cell.textContent.trim().replace(/,/g, ';');
+            return `"${text}"`;
+        }).join(',');
+    }).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    
+    if (window.notificationSystem) {
+        window.notificationSystem.success('Auditoría exportada exitosamente');
+    }
+}
+</script>
+{% endblock %}

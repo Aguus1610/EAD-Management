@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Acceso al Sistema de Gestión de Taller">
+    
+    <title>Iniciar Sesión - Gestión de Taller</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+    
+    <!-- External CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .login-header .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        
+        .login-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .login-body {
+            padding: 2rem;
+        }
+        
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .form-control:focus + label {
+            color: #667eea;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .form-check {
+            margin: 1.5rem 0;
+        }
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .divider span {
+            background: var(--bg-primary);
+            padding: 0 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .demo-credentials {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .demo-credentials h6 {
+            margin: 0 0 0.5rem 0;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .demo-credentials .credential-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+        
+        .demo-credentials .credential-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .demo-credentials code {
+            background: #e9ecef;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .version-info {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(102, 126, 234, 0.1);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Tema oscuro */
+        [data-theme="dark"] .demo-credentials {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        [data-theme="dark"] .demo-credentials h6 {
+            color: var(--text-primary);
+        }
+        
+        [data-theme="dark"] .demo-credentials code {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">🔧</div>
+            <h1>Gestión de Taller</h1>
+            <p>Sistema Inteligente de Mantenimiento</p>
+        </div>
+        
+        <div class="login-body">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' }} me-2"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" id="loginForm">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Usuario" required>
+                    <label for="username"><i class="fas fa-user me-2"></i>Usuario o Email</label>
+                </div>
+                
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+                    <label for="password"><i class="fas fa-lock me-2"></i>Contraseña</label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">
+                        Recordarme por 30 días
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-login" id="loginBtn">
+                    <span class="btn-text">
+                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                    </span>
+                    <div class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </button>
+            </form>
+            
+            <div class="divider">
+                <span>Credenciales de prueba</span>
+            </div>
+            
+            <div class="demo-credentials">
+                <h6><i class="fas fa-key me-2"></i>Cuentas de demostración:</h6>
+                <div class="credential-item">
+                    <span><strong>Admin:</strong></span>
+                    <span>Usuario: <code>admin</code> / Pass: <code>admin123</code></span>
+                </div>
+                <div class="credential-item">
+                    <span><strong>Técnico:</strong></span>
+                    <span>Usuario: <code>tecnico</code> / Pass: <code>tecnico123</code></span>
+                </div>
+                <div class="credential-item">
+                    <span><strong>Gerente:</strong></span>
+                    <span>Usuario: <code>gerente</code> / Pass: <code>gerente123</code></span>
+                </div>
+            </div>
+            
+            <div class="version-info">
+                <div><strong>Sistema de Gestión de Taller v2.0</strong></div>
+                <div>con Inteligencia Artificial y PWA</div>
+                <div class="mt-2">
+                    <small>
+                        <i class="fas fa-shield-alt me-1"></i>Conexión segura
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-mobile-alt me-1"></i>Optimizado para móviles
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const loadingOverlay = loginBtn.querySelector('.loading-overlay');
+            const btnText = loginBtn.querySelector('.btn-text');
+            
+            // Efecto de carga en el formulario
+            loginForm.addEventListener('submit', function(e) {
+                loginBtn.style.position = 'relative';
+                loadingOverlay.style.display = 'flex';
+                btnText.style.opacity = '0';
+                loginBtn.disabled = true;
+                
+                // Simular delay mínimo para mostrar el loading
+                setTimeout(() => {
+                    // El formulario se enviará normalmente
+                }, 300);
+            });
+            
+            // Auto-focus en el campo de usuario
+            document.getElementById('username').focus();
+            
+            // Efecto de ripple en botones
+            loginBtn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${x}px;
+                    top: ${y}px;
+                    background: rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple 0.6s linear;
+                    pointer-events: none;
+                `;
+                
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+            
+            // Mejorar experiencia de campos de entrada
+            const inputs = document.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+                
+                // Validación en tiempo real
+                input.addEventListener('input', function() {
+                    if (this.value.length > 0) {
+                        this.classList.add('has-value');
+                    } else {
+                        this.classList.remove('has-value');
+                    }
+                });
+            });
+            
+            // Detección de tema del sistema
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                if (!localStorage.getItem('theme')) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            }
+            
+            // Mensaje de bienvenida
+            console.log(`
+🔧 Sistema de Gestión de Taller v2.0
+====================================
+✨ Características:
+   • Autenticación segura con roles
+   • Interfaz responsive y PWA
+   • Sistema de temas (claro/oscuro)
+   • Inteligencia artificial integrada
+   • Auditoría completa de acciones
+
+👤 Credenciales de prueba:
+   • Admin: admin / admin123
+   • Técnico: tecnico / tecnico123
+   • Gerente: gerente / gerente123
+
+🚀 ¡Bienvenido al futuro de la gestión de talleres!
+            `);
+        });
+        
+        // Agregar estilos para la animación de ripple
+        const rippleStyle = document.createElement('style');
+        rippleStyle.textContent = `
+            @keyframes ripple {
+                to { transform: scale(4); opacity: 0; }
+            }
+            
+            .form-floating.focused .form-control {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+            
+            .form-control.has-value {
+                border-color: #28a745;
+            }
+        `;
+        document.head.appendChild(rippleStyle);
+    </script>
+</body>
+</html>

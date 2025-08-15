@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Mantenimiento - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Editar Mantenimiento
+                    </h4>
+                    <small class="text-muted">
+                        Mantenimiento ID: {{ mantenimiento.id }} | 
+                        Cliente: {{ mantenimiento.cliente_nombre }}
+                    </small>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Selección de Equipo -->
+                            <div class="col-md-6 mb-3">
+                                <label for="equipo_id" class="form-label">
+                                    <i class="fas fa-tools"></i> Equipo *
+                                </label>
+                                <select class="form-control" id="equipo_id" name="equipo_id" required>
+                                    <option value="">Seleccionar equipo...</option>
+                                    {% for equipo in equipos %}
+                                    <option value="{{ equipo.id }}" 
+                                            {% if equipo.id == mantenimiento.equipo_id %}selected{% endif %}>
+                                        {{ equipo.cliente_nombre }} - {{ equipo.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Fecha de Mantenimiento -->
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha_mantenimiento" class="form-label">
+                                    <i class="fas fa-calendar"></i> Fecha de Mantenimiento *
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="fecha_mantenimiento" 
+                                       name="fecha_mantenimiento" 
+                                       value="{{ mantenimiento.fecha_mantenimiento }}" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Tipo de Mantenimiento -->
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_mantenimiento" class="form-label">
+                                    <i class="fas fa-cogs"></i> Tipo de Mantenimiento *
+                                </label>
+                                <select class="form-control" id="tipo_mantenimiento" name="tipo_mantenimiento" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="Preventivo" {% if mantenimiento.tipo_mantenimiento == 'Preventivo' %}selected{% endif %}>
+                                        Preventivo
+                                    </option>
+                                    <option value="Correctivo" {% if mantenimiento.tipo_mantenimiento == 'Correctivo' %}selected{% endif %}>
+                                        Correctivo
+                                    </option>
+                                    <option value="Emergencia" {% if mantenimiento.tipo_mantenimiento == 'Emergencia' %}selected{% endif %}>
+                                        Emergencia
+                                    </option>
+                                    <option value="Inspección" {% if mantenimiento.tipo_mantenimiento == 'Inspección' %}selected{% endif %}>
+                                        Inspección
+                                    </option>
+                                    <option value="Reparación" {% if mantenimiento.tipo_mantenimiento == 'Reparación' %}selected{% endif %}>
+                                        Reparación
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-md-6 mb-3">
+                                <label for="estado" class="form-label">
+                                    <i class="fas fa-flag"></i> Estado *
+                                </label>
+                                <select class="form-control" id="estado" name="estado" required>
+                                    <option value="">Seleccionar estado...</option>
+                                    <option value="Pendiente" {% if mantenimiento.estado == 'Pendiente' %}selected{% endif %}>
+                                        <i class="fas fa-clock text-warning"></i> Pendiente
+                                    </option>
+                                    <option value="En Progreso" {% if mantenimiento.estado == 'En Progreso' %}selected{% endif %}>
+                                        <i class="fas fa-play text-info"></i> En Progreso
+                                    </option>
+                                    <option value="Completado" {% if mantenimiento.estado == 'Completado' %}selected{% endif %}>
+                                        <i class="fas fa-check text-success"></i> Completado
+                                    </option>
+                                    <option value="Cancelado" {% if mantenimiento.estado == 'Cancelado' %}selected{% endif %}>
+                                        <i class="fas fa-times text-danger"></i> Cancelado
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-4">
+                            <label for="descripcion" class="form-label">
+                                <i class="fas fa-file-alt"></i> Descripción del Mantenimiento *
+                            </label>
+                            <textarea class="form-control" 
+                                      id="descripcion" 
+                                      name="descripcion" 
+                                      rows="5" 
+                                      placeholder="Describe detalladamente el trabajo realizado, repuestos utilizados, observaciones, etc."
+                                      required>{{ mantenimiento.descripcion }}</textarea>
+                            <div class="form-text">
+                                Incluye detalles sobre repuestos utilizados, trabajos realizados, observaciones importantes, etc.
+                            </div>
+                        </div>
+
+                        <!-- Información Original -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Información Original del Mantenimiento:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Equipo Original:</strong> {{ mantenimiento.equipo_nombre }}<br>
+                                    <strong>Fecha Original:</strong> {{ mantenimiento.fecha_mantenimiento }}<br>
+                                    <strong>Tipo Original:</strong> {{ mantenimiento.tipo_mantenimiento }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Estado Original:</strong> 
+                                    <span class="badge bg-{% if mantenimiento.estado == 'Completado' %}success{% elif mantenimiento.estado == 'En Progreso' %}info{% elif mantenimiento.estado == 'Pendiente' %}warning{% else %}danger{% endif %}">
+                                        {{ mantenimiento.estado }}
+                                    </span><br>
+                                    <strong>Cliente:</strong> {{ mantenimiento.cliente_nombre }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{{ url_for('mantenimientos') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver a Mantenimientos
+                                </a>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-danger me-2" onclick="confirmarEliminacion()">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de que quieres eliminar este mantenimiento?</strong></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning"></i> Esta acción no se puede deshacer.
+                    <br><strong>Mantenimiento:</strong> {{ mantenimiento.equipo_nombre }} - {{ mantenimiento.fecha_mantenimiento }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form method="POST" action="{{ url_for('eliminar_mantenimiento', id=mantenimiento.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacion() {
+    const modal = new bootstrap.Modal(document.getElementById('eliminarModal'));
+    modal.show();
+}
+
+// Mejorar UX del formulario
+document.getElementById('equipo_id').addEventListener('change', function() {
+    const equipoSelect = this;
+    const selectedOption = equipoSelect.options[equipoSelect.selectedIndex];
+    if (selectedOption.value) {
+        // Resaltar la selección
+        equipoSelect.classList.add('border-success');
+    } else {
+        equipoSelect.classList.remove('border-success');
+    }
+});
+
+document.getElementById('estado').addEventListener('change', function() {
+    const estado = this.value;
+    const card = document.querySelector('.card');
+    
+    // Remover clases anteriores
+    card.classList.remove('border-success', 'border-warning', 'border-info', 'border-danger');
+    
+    // Agregar clase según estado
+    switch(estado) {
+        case 'Completado':
+            card.classList.add('border-success');
+            break;
+        case 'En Progreso':
+            card.classList.add('border-info');
+            break;
+        case 'Pendiente':
+            card.classList.add('border-warning');
+            break;
+        case 'Cancelado':
+            card.classList.add('border-danger');
+            break;
+    }
+});
+
+// Establecer estado inicial
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.getElementById('estado');
+    estadoSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

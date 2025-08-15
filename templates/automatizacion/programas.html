@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Programas de Mantenimiento - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-calendar-alt"></i> Programas de Mantenimiento Automatizado</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('automatizacion') }}">Automatización</a></li>
+            <li class="breadcrumb-item active">Programas de Mantenimiento</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Filtros y acciones -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="busqueda" class="form-label">Buscar Programa</label>
+                        <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                               value="{{ busqueda }}" placeholder="Nombre o descripción...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="cliente_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="cliente_id" name="cliente_id">
+                            <option value="">Todos los clientes</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {{ 'selected' if filtro_cliente == cliente.id|string }}>
+                                {{ cliente.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="">Todos los estados</option>
+                            <option value="activo" {{ 'selected' if filtro_estado == 'activo' }}>Activos</option>
+                            <option value="inactivo" {{ 'selected' if filtro_estado == 'inactivo' }}>Inactivos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-grid gap-2">
+                    {% if g.user.permisos.get('all') or 'create' in g.user.permisos.get('usuarios', '') %}
+                    <a href="{{ url_for('nuevo_programa_mantenimiento') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Nuevo Programa
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('programas_mantenimiento') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh"></i> Limpiar Filtros
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de programas -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> Programas Configurados 
+            <span class="badge bg-primary">{{ programas|length }}</span>
+        </h5>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-cog"></i> Acciones
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="ejecutarProgramasVencidos()">
+                    <i class="fas fa-play"></i> Ejecutar Vencidos
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportarProgramas()">
+                    <i class="fas fa-download"></i> Exportar
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="sincronizarProgramas()">
+                    <i class="fas fa-sync"></i> Sincronizar
+                </a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if programas %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="programasTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-info-circle"></i> Programa</th>
+                        <th><i class="fas fa-cog"></i> Equipo/Cliente</th>
+                        <th><i class="fas fa-wrench"></i> Tipo</th>
+                        <th><i class="fas fa-calendar"></i> Frecuencia</th>
+                        <th><i class="fas fa-clock"></i> Próxima Ejecución</th>
+                        <th><i class="fas fa-user"></i> Técnico</th>
+                        <th><i class="fas fa-toggle-on"></i> Estado</th>
+                        <th><i class="fas fa-cogs"></i> Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for programa in programas %}
+                    <tr class="{{ 'table-warning' if programa.proxima_ejecucion and programa.proxima_ejecucion <= date.today().strftime('%Y-%m-%d') else '' }}">
+                        <td>
+                            <div>
+                                <div class="fw-bold">{{ programa.nombre }}</div>
+                                {% if programa.descripcion %}
+                                <small class="text-muted">{{ programa.descripcion[:50] }}{% if programa.descripcion|length > 50 %}...{% endif %}</small>
+                                {% endif %}
+                                <div class="small mt-1">
+                                    <span class="badge bg-light text-dark">ID: {{ programa.id }}</span>
+                                    {% if programa.costo_estimado %}
+                                    <span class="badge bg-success">${{ "%.0f"|format(programa.costo_estimado) }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if programa.equipo_nombre %}
+                            <div>
+                                <div class="fw-bold"><i class="fas fa-cog me-1"></i>{{ programa.equipo_nombre }}</div>
+                                {% if programa.cliente_nombre %}
+                                <small class="text-muted">{{ programa.cliente_nombre }}</small>
+                                {% endif %}
+                            </div>
+                            {% elif programa.cliente_nombre %}
+                            <div>
+                                <div class="fw-bold"><i class="fas fa-building me-1"></i>{{ programa.cliente_nombre }}</div>
+                                <small class="text-muted">Todos los equipos</small>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No asignado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'info' if programa.tipo_mantenimiento == 'Preventivo' else 'warning' if programa.tipo_mantenimiento == 'Correctivo' else 'danger' if programa.tipo_mantenimiento == 'Emergencia' else 'secondary' }}">
+                                {{ programa.tipo_mantenimiento }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <div class="fw-bold">{{ programa.intervalo_dias }} días</div>
+                                <small class="text-muted">
+                                    {% if programa.tolerancia_dias %}
+                                    ±{{ programa.tolerancia_dias }}d tolerancia
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if programa.proxima_ejecucion %}
+                            <div>
+                                <span class="badge bg-{{ 'danger' if programa.proxima_ejecucion <= date.today().strftime('%Y-%m-%d') else 'warning' if (programa.proxima_ejecucion | string)[:10] <= (date.today() + timedelta(days=3)).strftime('%Y-%m-%d') else 'info' }}">
+                                    {{ programa.proxima_ejecucion }}
+                                </span>
+                                {% if programa.ultima_ejecucion %}
+                                <br><small class="text-muted">Último: {{ programa.ultima_ejecucion }}</small>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No programado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if programa.tecnico_asignado %}
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span>{{ programa.tecnico_asignado }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Sin asignar</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if programa.activo %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-play"></i> Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-pause"></i> Inactivo
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% if programa.activo and programa.proxima_ejecucion %}
+                                <a href="{{ url_for('ejecutar_programa_mantenimiento', programa_id=programa.id) }}" 
+                                   class="btn btn-outline-success" 
+                                   onclick="showConfirm('¿Ejecutar este programa de mantenimiento ahora?', function(confirmed) { return confirmed; }); return false)"
+                                   data-bs-toggle="tooltip" title="Ejecutar ahora">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if g.user.permisos.get('all') or 'update' in g.user.permisos.get('usuarios', '') %}
+                                <button type="button" class="btn btn-outline-primary" 
+                                        onclick="editarPrograma({{ programa.id }})"
+                                        data-bs-toggle="tooltip" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% endif %}
+                                
+                                <button type="button" class="btn btn-outline-info" 
+                                        onclick="verHistorial({{ programa.id }})"
+                                        data-bs-toggle="tooltip" title="Ver historial">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                
+                                {% if g.user.permisos.get('all') or 'delete' in g.user.permisos.get('usuarios', '') %}
+                                <button type="button" class="btn btn-outline-{{ 'warning' if programa.activo else 'success' }}" 
+                                        onclick="togglePrograma({{ programa.id }}, {{ programa.activo|lower }})"
+                                        data-bs-toggle="tooltip" title="{{ 'Desactivar' if programa.activo else 'Activar' }}">
+                                    <i class="fas fa-{{ 'pause' if programa.activo else 'play' }}"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">No se encontraron programas</h5>
+            <p class="text-muted">{% if busqueda or filtro_cliente or filtro_estado %}
+                Intenta ajustar los filtros de búsqueda
+            {% else %}
+                No hay programas de mantenimiento configurados
+            {% endif %}</p>
+            {% if g.user.permisos.get('all') or 'create' in g.user.permisos.get('usuarios', '') %}
+            <a href="{{ url_for('nuevo_programa_mantenimiento') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Crear Primer Programa
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.avatar-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit en cambio de filtros
+    ['cliente_id', 'estado'].forEach(id => {
+        document.getElementById(id).addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Búsqueda con delay
+    let searchTimeout;
+    document.getElementById('busqueda').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 800);
+    });
+    
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function ejecutarProgramasVencidos() {
+    showConfirm('¿Ejecutar todos los programas que están vencidos?', function(confirmed) { if (confirmed))) {
+        window.notificationSystem?.info('Ejecutando programas vencidos...');
+        // Aquí iría la lógica
+    }
+}
+
+function exportarProgramas() {
+    // Mostrar opciones de exportación
+    showConfirm(
+        '¿En qué formato desea exportar los programas?',
+        function(confirmed) {
+            if (confirmed) {
+                // Exportar PDF
+                window.open('/api/export/pdf/programas', '_blank');
+                showSuccess('Generando reporte PDF de programas...');
+            } else {
+                // Exportar CSV
+                exportarProgramasCSV();
+            }
+        },
+        {
+            titulo: 'Formato de Exportación',
+            confirmar: 'PDF',
+            cancelar: 'CSV',
+            tipo: 'primary'
+        }
+    );
+}
+
+function exportarProgramasCSV() {
+    const table = document.getElementById('programasTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+    
+    const csvContent = rows.map(row => {
+        const cells = Array.from(row.querySelectorAll('th, td'));
+        return cells.slice(0, -1).map(cell => { // Excluir última columna (acciones)
+            const text = cell.textContent.trim().replace(/,/g, ';');
+            return `"${text}"`;
+        }).join(',');
+    }).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'programas_mantenimiento.csv';
+    link.click();
+    
+    showSuccess('Programas exportados a CSV exitosamente');
+}
+
+function sincronizarProgramas() {
+    window.notificationSystem?.info('Sincronizando programas...');
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+function editarPrograma(programaId) {
+    window.notificationSystem?.info(`Editar programa #${programaId} - Función en desarrollo`);
+}
+
+function verHistorial(programaId) {
+    window.notificationSystem?.info(`Historial del programa #${programaId} - Función en desarrollo`);
+}
+
+function togglePrograma(programaId, activo) {
+    const accion = activo ? 'desactivar' : 'activar';
+    if (confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} este programa?`)) {
+        window.notificationSystem?.info(`Programa #${programaId} ${accion}do`);
+        // Aquí iría la lógica para toggle
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
+}
+</script>
+{% endblock %}

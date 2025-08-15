@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Avanzado - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Interactivo</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+    </nav>
+    <div class="header-actions">
+        <button class="btn btn-outline-primary btn-sm" onclick="actualizarDatos()">
+            <i class="fas fa-sync-alt"></i> Actualizar
+        </button>
+        <div class="dropdown d-inline">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download"></i> Exportar
+            </button>
+                                        <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="exportarDashboard('pdf')">
+                                    <i class="fas fa-file-pdf"></i> Reporte PDF
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportarDashboard('excel')">
+                                    <i class="fas fa-file-excel"></i> Datos Excel
+                                </a></li>
+                            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas críticas -->
+{% if alertas %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for alerta in alertas %}
+        <div class="alert alert-{{ alerta.tipo }} alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-{{ 'exclamation-triangle' if alerta.tipo == 'warning' else 'exclamation-circle' if alerta.tipo == 'danger' else 'times-circle' }} me-3 mt-1"></i>
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">{{ alerta.titulo }}</h6>
+                    <p class="mb-2">{{ alerta.mensaje }}</p>
+                    {% if alerta.datos %}
+                    <div class="small">
+                        {% for dato in alerta.datos[:3] %}
+                        <div>• {{ dato.nombre }} {% if dato.cliente_nombre %}({{ dato.cliente_nombre }}){% endif %}</div>
+                        {% endfor %}
+                        {% if alerta.datos|length > 3 %}
+                        <div class="text-muted">... y {{ alerta.datos|length - 3 }} más</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Métricas principales -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Equipos Activos</h6>
+                        <h3 class="card-title mb-1" id="equipos-activos">{{ stats.equipos_activos }}</h3>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up"></i>
+                            <span id="equipos-porcentaje">{{ "%.1f"|format(stats.equipos_activos * 100.0 / stats.total_equipos if stats.total_equipos > 0 else 0) }}%</span>
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-cogs text-primary"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ stats.equipos_activos * 100 / stats.total_equipos if stats.total_equipos > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Mantenimientos Pendientes</h6>
+                        <h3 class="card-title mb-1" id="mantenimientos-pendientes">{{ stats.mantenimientos_pendientes }}</h3>
+                        <small class="text-warning">
+                            <i class="fas fa-clock"></i>
+                            {{ stats.mantenimientos_en_progreso }} en progreso
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-wrench text-warning"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ stats.mantenimientos_pendientes * 100 / (stats.total_mantenimientos or 1) }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Stock Crítico</h6>
+                        <h3 class="card-title mb-1" id="stock-critico">{{ stats.repuestos_stock_bajo }}</h3>
+                        <small class="text-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Requiere atención
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-boxes text-danger"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 75%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Total Clientes</h6>
+                        <h3 class="card-title mb-1" id="total-clientes">{{ stats.total_clientes }}</h3>
+                        <small class="text-info">
+                            <i class="fas fa-users"></i>
+                            Gestión activa
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-building text-info"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análisis predictivo -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-crystal-ball me-2"></i>
+                    Predicción de Mantenimientos (IA)
+                </h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="configurarPredicciones()">Configurar algoritmo</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportarPredicciones()">Exportar predicciones</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if equipos_mantenimiento_predicho %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Equipo</th>
+                                <th>Cliente</th>
+                                <th>Días hasta mantenimiento</th>
+                                <th>Riesgo</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipo in equipos_mantenimiento_predicho[:8] %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ equipo.nombre }}</div>
+                                    <small class="text-muted">{{ equipo.marca }} {{ equipo.modelo }}</small>
+                                </td>
+                                <td>{{ equipo.cliente_nombre }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if equipo.dias_hasta_proximo <= 7 else 'warning' if equipo.dias_hasta_proximo <= 14 else 'info' }}">
+                                        {{ "%.0f"|format(equipo.dias_hasta_proximo) }} días
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="risk-indicator risk-medium me-2"></div>
+                                        <span class="small">Medio</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="programarMantenimiento({{ equipo.id }})">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-robot text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">IA Analizando Datos</h6>
+                    <p class="text-muted">Se necesitan más datos históricos para generar predicciones precisas</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Distribución de Costos
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="costosChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos de análisis -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Tendencia de Mantenimientos
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="tendenciaChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-cog me-2"></i>
+                    Eficiencia por Técnico
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="eficienciaChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top clientes y actividad reciente -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Top Clientes (Últimos 6 meses)
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_clientes %}
+                <div class="list-group list-group-flush">
+                    {% for cliente in top_clientes[:5] %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <div class="fw-bold">{{ cliente.nombre }}</div>
+                            <small class="text-muted">
+                                {{ cliente.total_equipos }} equipos • {{ cliente.total_mantenimientos }} mantenimientos
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-success">${{ "%.0f"|format(cliente.gasto_total) }}</div>
+                            <small class="text-muted">Promedio: ${{ "%.0f"|format(cliente.gasto_promedio) }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-chart-bar text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay datos de clientes disponibles</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Actividad Reciente
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if actividad_reciente %}
+                <div class="timeline">
+                    {% for actividad in actividad_reciente[:8] %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="fas fa-{{ 'wrench' if actividad.tipo == 'mantenimiento' else 'cogs' }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-bold">{{ actividad.equipo_nombre }}</div>
+                                    <small class="text-muted">{{ actividad.cliente_nombre }}</small>
+                                </div>
+                                <small class="text-muted">{{ actividad.fecha_creacion[:10] }}</small>
+                            </div>
+                            <div class="small mt-1">
+                                {% if actividad.tipo == 'mantenimiento' %}
+                                <span class="badge bg-info">{{ actividad.tipo_mantenimiento }}</span>
+                                <span class="badge bg-{{ 'success' if actividad.estado == 'Completado' else 'warning' if actividad.estado == 'En Progreso' else 'secondary' }}">
+                                    {{ actividad.estado }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-primary">Nuevo Equipo</span>
+                                <span class="badge bg-success">{{ actividad.estado }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-clock text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay actividad reciente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Eficiencia operativa -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Análisis de Eficiencia Operativa
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if eficiencia_tipos %}
+                <div class="row">
+                    {% for tipo in eficiencia_tipos %}
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="efficiency-card">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ tipo.tipo_mantenimiento }}</h6>
+                                <span class="badge bg-primary">{{ tipo.total }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-sm mb-2">
+                                <span>Tiempo promedio:</span>
+                                <strong>{{ "%.1f"|format(tipo.dias_promedio_resolucion or 0) }} días</strong>
+                            </div>
+                            <div class="d-flex justify-content-between text-sm mb-2">
+                                <span>Completados:</span>
+                                <strong>{{ "%.1f"|format(tipo.porcentaje_completados) }}%</strong>
+                            </div>
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-{{ 'success' if tipo.porcentaje_completados > 80 else 'warning' if tipo.porcentaje_completados > 60 else 'danger' }}" 
+                                     style="width: {{ tipo.porcentaje_completados }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">Calculando Eficiencia</h6>
+                    <p class="text-muted">Se necesitan más datos para el análisis de eficiencia</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.metric-card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.metric-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.header-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.efficiency-card {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.timeline-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-top: 4px;
+}
+
+.risk-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.risk-low { background-color: #28a745; }
+.risk-medium { background-color: #ffc107; }
+.risk-high { background-color: #dc3545; }
+
+.text-sm {
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+let tendenciaChart, eficienciaChart, costosChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarDashboard();
+    cargarGraficos();
+    
+    // Actualizar datos cada 5 minutos
+    setInterval(actualizarDatos, 300000);
+});
+
+function inicializarDashboard() {
+    // Animaciones de entrada para las métricas
+    document.querySelectorAll('.metric-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+}
+
+function cargarGraficos() {
+    // Cargar datos para gráficos
+    Promise.all([
+        fetch('/api/dashboard/tendencias').then(r => r.json()),
+        fetch('/api/dashboard/predicciones').then(r => r.json())
+    ]).then(([tendencias, predicciones]) => {
+        crearGraficoTendencia(tendencias);
+        crearGraficoEficiencia(tendencias);
+        crearGraficoCostos(tendencias);
+    }).catch(error => {
+        console.error('Error cargando gráficos:', error);
+    });
+}
+
+function crearGraficoTendencia(data) {
+    const ctx = document.getElementById('tendenciaChart').getContext('2d');
+    
+    tendenciaChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.mantenimientos_diarios.map(d => d.fecha),
+            datasets: [{
+                label: 'Total',
+                data: data.mantenimientos_diarios.map(d => d.total),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Preventivos',
+                data: data.mantenimientos_diarios.map(d => d.preventivos),
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Correctivos',
+                data: data.mantenimientos_diarios.map(d => d.correctivos),
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoEficiencia(data) {
+    const ctx = document.getElementById('eficienciaChart').getContext('2d');
+    
+    eficienciaChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.eficiencia_tecnicos.map(t => t.tecnico),
+            datasets: [{
+                label: 'Trabajos Completados',
+                data: data.eficiencia_tecnicos.map(t => t.completados),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Total Trabajos',
+                data: data.eficiencia_tecnicos.map(t => t.total_trabajos),
+                backgroundColor: 'rgba(201, 203, 207, 0.8)',
+                borderColor: 'rgba(201, 203, 207, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function crearGraficoCostos(data) {
+    const ctx = document.getElementById('costosChart').getContext('2d');
+    
+    costosChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.distribucion_costos.map(d => d.rango_costo),
+            datasets: [{
+                data: data.distribucion_costos.map(d => d.cantidad),
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                    '#9966FF', '#FF9F40'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function actualizarDatos() {
+    const btn = document.querySelector('button[onclick="actualizarDatos()"]');
+    const icon = btn.querySelector('i');
+    
+    // Animación de carga
+    icon.classList.add('fa-spin');
+    btn.disabled = true;
+    
+    fetch('/api/dashboard/metricas')
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar métricas
+            document.getElementById('equipos-activos').textContent = data.equipos.activos;
+            document.getElementById('mantenimientos-pendientes').textContent = data.mantenimientos.pendientes;
+            document.getElementById('stock-critico').textContent = data.stock.stock_bajo;
+            document.getElementById('total-clientes').textContent = data.equipos.total;
+            
+            // Actualizar porcentajes
+            const porcentajeEquipos = (data.equipos.activos * 100 / data.equipos.total).toFixed(1);
+            document.getElementById('equipos-porcentaje').textContent = porcentajeEquipos + '%';
+            
+            if (window.notificationSystem) {
+                window.notificationSystem.success('Dashboard actualizado');
+            }
+        })
+        .catch(error => {
+            console.error('Error actualizando datos:', error);
+            if (window.notificationSystem) {
+                window.notificationSystem.error('Error actualizando datos');
+            }
+        })
+        .finally(() => {
+            icon.classList.remove('fa-spin');
+            btn.disabled = false;
+        });
+}
+
+function programarMantenimiento(equipoId) {
+    if (window.notificationSystem) {
+        window.notificationSystem.info(`Programando mantenimiento para equipo #${equipoId}`);
+    }
+    // Aquí se implementaría la funcionalidad de programación
+}
+
+function configurarPredicciones() {
+    if (window.notificationSystem) {
+        window.notificationSystem.info('Configuración de IA próximamente');
+    }
+}
+
+function exportarPredicciones() {
+    if (window.notificationSystem) {
+        window.notificationSystem.info('Exportando predicciones...');
+    }
+}
+
+// Esta función será manejada por simple-export.js
+// No necesitamos redefinirla aquí
+</script>
+{% endblock %}

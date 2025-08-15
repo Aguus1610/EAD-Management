@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva API Externa - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plus"></i> Configurar Nueva API Externa</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('configuracion_app') }}">Configuración</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('apis_dashboard') }}">APIs Externas</a></li>
+            <li class="breadcrumb-item active">Nueva API</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Configuración de API
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Información básica -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Información Básica</h6>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre de la API *</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                                    <div class="form-text">Nombre descriptivo para identificar esta API</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tipo" class="form-label">Tipo de API *</label>
+                                    <select class="form-select" id="tipo" name="tipo" required onchange="cambiarTipoAPI()">
+                                        <option value="">Seleccionar tipo...</option>
+                                        <option value="proveedor">Proveedor de Repuestos</option>
+                                        <option value="contabilidad">Sistema de Contabilidad</option>
+                                        <option value="inventario">Sistema de Inventario</option>
+                                        <option value="crm">Sistema CRM</option>
+                                    </select>
+                                    <div class="form-text">Tipo de sistema externo a conectar</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="url_base" class="form-label">URL Base de la API *</label>
+                            <input type="url" class="form-control" id="url_base" name="url_base" required
+                                   placeholder="https://api.ejemplo.com">
+                            <div class="form-text">URL base del servicio API (incluir https://)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Autenticación -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Autenticación</h6>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="api_key" class="form-label">API Key</label>
+                                    <input type="password" class="form-control" id="api_key" name="api_key"
+                                           placeholder="Clave de API proporcionada por el proveedor">
+                                    <div class="form-text">Clave de autenticación (opcional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="autenticacion" class="form-label">Método de Autenticación</label>
+                                    <select class="form-select" id="autenticacion" name="autenticacion">
+                                        <option value="api_key">API Key (Header)</option>
+                                        <option value="bearer">Bearer Token</option>
+                                        <option value="basic">Basic Auth</option>
+                                        <option value="oauth">OAuth 2.0</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuración técnica -->
+                    <div class="mb-4">
+                        <h6 class="text-info">Configuración Técnica</h6>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="timeout" class="form-label">Timeout (segundos)</label>
+                                    <input type="number" class="form-control" id="timeout" name="timeout" 
+                                           value="30" min="5" max="300">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="retries" class="form-label">Reintentos</label>
+                                    <input type="number" class="form-control" id="retries" name="retries" 
+                                           value="3" min="0" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="formato" class="form-label">Formato de Datos</label>
+                                    <select class="form-select" id="formato" name="formato">
+                                        <option value="json">JSON</option>
+                                        <option value="xml">XML</option>
+                                        <option value="csv">CSV</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="headers_adicionales" class="form-label">Headers Adicionales (JSON)</label>
+                            <textarea class="form-control" id="headers_adicionales" name="headers_adicionales" 
+                                      rows="3" placeholder='{"Content-Type": "application/json", "Custom-Header": "valor"}'>{}</textarea>
+                            <div class="form-text">Headers HTTP adicionales en formato JSON</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuración específica por tipo -->
+                    <div id="config_proveedor" class="mb-4" style="display: none;">
+                        <h6 class="text-warning">Configuración de Proveedor</h6>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="catalogo_endpoint" class="form-label">Endpoint Catálogo</label>
+                                    <input type="text" class="form-control" id="catalogo_endpoint" name="catalogo_endpoint"
+                                           placeholder="/api/productos">
+                                    <div class="form-text">Endpoint para obtener catálogo</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="precios_endpoint" class="form-label">Endpoint Precios</label>
+                                    <input type="text" class="form-control" id="precios_endpoint" name="precios_endpoint"
+                                           placeholder="/api/precios">
+                                    <div class="form-text">Endpoint para precios actualizados</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="stock_endpoint" class="form-label">Endpoint Stock</label>
+                                    <input type="text" class="form-control" id="stock_endpoint" name="stock_endpoint"
+                                           placeholder="/api/stock">
+                                    <div class="form-text">Endpoint para consultar stock</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="config_contabilidad" class="mb-4" style="display: none;">
+                        <h6 class="text-danger">Configuración de Contabilidad</h6>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="empresa_id" class="form-label">ID de Empresa</label>
+                                    <input type="text" class="form-control" id="empresa_id" name="empresa_id"
+                                           placeholder="12345">
+                                    <div class="form-text">ID de tu empresa en el sistema</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="moneda" class="form-label">Moneda</label>
+                                    <select class="form-select" id="moneda" name="moneda">
+                                        <option value="MXN">Peso Mexicano (MXN)</option>
+                                        <option value="USD">Dólar Americano (USD)</option>
+                                        <option value="EUR">Euro (EUR)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="tipo_cambio_api" class="form-label">API Tipo de Cambio</label>
+                                    <input type="url" class="form-control" id="tipo_cambio_api" name="tipo_cambio_api"
+                                           placeholder="https://api.cambio.com">
+                                    <div class="form-text">API para tipo de cambio (opcional)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="activa" name="activa" checked>
+                            <label class="form-check-label" for="activa">
+                                Activar API inmediatamente
+                            </label>
+                            <div class="form-text">Si está activada, se probará la conexión al guardar</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('apis_dashboard') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Configurar API
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ayuda y Ejemplos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="ayuda_general">
+                    <h6>Configuración de APIs</h6>
+                    <p class="small">Las APIs externas permiten sincronizar datos automáticamente con otros sistemas.</p>
+                    
+                    <h6>Seguridad</h6>
+                    <ul class="small">
+                        <li>Usa siempre HTTPS en URLs</li>
+                        <li>No compartas tu API Key</li>
+                        <li>Verifica las credenciales</li>
+                    </ul>
+                </div>
+                
+                <div id="ayuda_proveedor" style="display: none;">
+                    <h6 class="text-warning">Proveedores Populares</h6>
+                    <div class="small">
+                        <strong>AutoZone:</strong><br>
+                        URL: <code>https://api.autozone.com</code><br>
+                        Endpoints: <code>/products</code>, <code>/prices</code><br><br>
+                        
+                        <strong>NAPA:</strong><br>
+                        URL: <code>https://api.napaonline.com</code><br>
+                        Autenticación: API Key<br><br>
+                        
+                        <strong>Repuestos González:</strong><br>
+                        URL: <code>https://api.repuestosgonzalez.com</code><br>
+                        Formato: JSON
+                    </div>
+                </div>
+                
+                <div id="ayuda_contabilidad" style="display: none;">
+                    <h6 class="text-danger">Sistemas Contables</h6>
+                    <div class="small">
+                        <strong>QuickBooks:</strong><br>
+                        URL: <code>https://sandbox-quickbooks.api.intuit.com</code><br>
+                        Autenticación: OAuth 2.0<br><br>
+                        
+                        <strong>Facturama México:</strong><br>
+                        URL: <code>https://api.facturama.mx</code><br>
+                        Autenticación: Basic Auth<br><br>
+                        
+                        <strong>SAT México:</strong><br>
+                        URL: <code>https://api.sat.gob.mx</code><br>
+                        Moneda: MXN
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-test-tube me-2"></i>
+                    Prueba tu Configuración
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small">Después de configurar la API, puedes:</p>
+                <ul class="small">
+                    <li>Probar la conexión</li>
+                    <li>Ver logs de errores</li>
+                    <li>Sincronizar datos manualmente</li>
+                    <li>Configurar sincronización automática</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Tip:</strong> Empieza con APIs de prueba antes de usar credenciales de producción.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cambiarTipoAPI() {
+    const tipo = document.getElementById('tipo').value;
+    
+    // Ocultar todas las configuraciones específicas
+    document.getElementById('config_proveedor').style.display = 'none';
+    document.getElementById('config_contabilidad').style.display = 'none';
+    
+    // Ocultar todas las ayudas específicas
+    document.getElementById('ayuda_proveedor').style.display = 'none';
+    document.getElementById('ayuda_contabilidad').style.display = 'none';
+    document.getElementById('ayuda_general').style.display = 'block';
+    
+    // Mostrar configuración específica
+    if (tipo === 'proveedor') {
+        document.getElementById('config_proveedor').style.display = 'block';
+        document.getElementById('ayuda_proveedor').style.display = 'block';
+        document.getElementById('ayuda_general').style.display = 'none';
+    } else if (tipo === 'contabilidad') {
+        document.getElementById('config_contabilidad').style.display = 'block';
+        document.getElementById('ayuda_contabilidad').style.display = 'block';
+        document.getElementById('ayuda_general').style.display = 'none';
+    }
+}
+
+// Validar JSON en headers adicionales
+document.getElementById('headers_adicionales').addEventListener('blur', function() {
+    try {
+        JSON.parse(this.value);
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    } catch (e) {
+        this.classList.remove('is-valid');
+        this.classList.add('is-invalid');
+    }
+});
+
+// Validar URL
+document.getElementById('url_base').addEventListener('blur', function() {
+    const url = this.value;
+    if (url && !url.startsWith('https://')) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    }
+});
+</script>
+{% endblock %}

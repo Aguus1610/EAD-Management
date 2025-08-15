@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Cliente - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-user-plus"></i> Agregar Nuevo Cliente</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="nombre" class="form-label">Nombre del Cliente *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required 
+                                   placeholder="Ej: COSYPRO, CPE, APA, etc.">
+                            <div class="form-text">El nombre debe ser único en el sistema.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   placeholder="Ej: +54 9 11 1234-5678">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="Ej: contacto@cliente.com">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" 
+                               placeholder="Dirección completa del cliente">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" 
+                                  placeholder="Notas adicionales sobre el cliente..."></textarea>
+                    </div>
+
+                    <!-- Sección de Equipos -->
+                    <div class="card border-primary mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-tools"></i> Equipos del Cliente (Opcional)
+                                <small class="float-end">
+                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="agregarEquipo()">
+                                        <i class="fas fa-plus"></i> Agregar Equipo
+                                    </button>
+                                </small>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-lightbulb"></i> 
+                                <strong>Tip:</strong> Puedes agregar equipos ahora o hacerlo después desde la sección "Equipos".
+                            </div>
+                            
+                            <div id="equipos-container">
+                                <!-- Los equipos se agregarán aquí dinámicamente -->
+                            </div>
+                            
+                            <div id="no-equipos" class="text-center text-muted py-3">
+                                <i class="fas fa-tools fa-2x mb-2"></i>
+                                <p>No hay equipos agregados aún</p>
+                                <small>Haz clic en "Agregar Equipo" para comenzar</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cliente y Equipos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    Información sobre Clientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Creación Automática:</h6>
+                        <p class="text-muted">
+                            Al importar el archivo Excel, cada hoja se convierte automáticamente en un cliente. 
+                            Los nombres de las hojas (COSYPRO, CPE, APA, etc.) se usan como nombres de clientes.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Gestión Manual:</h6>
+                        <p class="text-muted">
+                            También puedes crear clientes manualmente para organizar mejor tus equipos y 
+                            tener un control más detallado de cada cliente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let equipoIndex = 0;
+
+function agregarEquipo() {
+    const container = document.getElementById('equipos-container');
+    const noEquipos = document.getElementById('no-equipos');
+    
+    // Ocultar mensaje de "no hay equipos"
+    noEquipos.style.display = 'none';
+    
+    // Crear el HTML del nuevo equipo
+    const equipoHTML = `
+        <div class="card mb-3 equipo-item" id="equipo-${equipoIndex}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-wrench"></i> Equipo ${equipoIndex + 1}
+                </h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarEquipo(${equipoIndex})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre del Equipo *</label>
+                        <input type="text" class="form-control" name="equipos[${equipoIndex}][nombre]" 
+                               placeholder="Ej: Excavadora CAT 320" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Marca</label>
+                        <input type="text" class="form-control" name="equipos[${equipoIndex}][marca]" 
+                               placeholder="Ej: Caterpillar">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" class="form-control" name="equipos[${equipoIndex}][modelo]" 
+                               placeholder="Ej: 320GC">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Serie</label>
+                        <input type="text" class="form-control" name="equipos[${equipoIndex}][numero_serie]" 
+                               placeholder="Número de serie del equipo">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-control" name="equipos[${equipoIndex}][estado]">
+                            <option value="Activo" selected>Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Mantenimiento">En Mantenimiento</option>
+                            <option value="Fuera de Servicio">Fuera de Servicio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" name="equipos[${equipoIndex}][ubicacion]" 
+                               placeholder="Ej: Taller Principal, Obra Norte">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea class="form-control" name="equipos[${equipoIndex}][observaciones]" rows="2" 
+                              placeholder="Notas adicionales sobre este equipo..."></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar el equipo al container
+    container.insertAdjacentHTML('beforeend', equipoHTML);
+    
+    // Incrementar el índice
+    equipoIndex++;
+    
+    // Scroll suave hacia el nuevo equipo
+    const nuevoEquipo = document.getElementById(`equipo-${equipoIndex - 1}`);
+    nuevoEquipo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Enfocar el primer campo del nuevo equipo
+    setTimeout(() => {
+        nuevoEquipo.querySelector('input[name*="[nombre]"]').focus();
+    }, 500);
+    
+    // Actualizar contador en el botón
+    actualizarContadorEquipos();
+}
+
+function eliminarEquipo(index) {
+    const equipo = document.getElementById(`equipo-${index}`);
+    if (equipo) {
+        equipo.remove();
+        
+        // Mostrar mensaje de "no hay equipos" si no quedan equipos
+        const equiposRestantes = document.querySelectorAll('.equipo-item');
+        if (equiposRestantes.length === 0) {
+            document.getElementById('no-equipos').style.display = 'block';
+        }
+        
+        // Actualizar contador
+        actualizarContadorEquipos();
+        
+        // Renumerar equipos restantes
+        renumerarEquipos();
+    }
+}
+
+function renumerarEquipos() {
+    const equipos = document.querySelectorAll('.equipo-item');
+    equipos.forEach((equipo, index) => {
+        const titulo = equipo.querySelector('.card-header h6');
+        titulo.innerHTML = `<i class="fas fa-wrench"></i> Equipo ${index + 1}`;
+    });
+}
+
+function actualizarContadorEquipos() {
+    const contador = document.querySelectorAll('.equipo-item').length;
+    const header = document.querySelector('.card-header h6');
+    if (contador > 0) {
+        header.innerHTML = `
+            <i class="fas fa-tools"></i> Equipos del Cliente (${contador})
+            <small class="float-end">
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="agregarEquipo()">
+                    <i class="fas fa-plus"></i> Agregar Equipo
+                </button>
+            </small>
+        `;
+    } else {
+        header.innerHTML = `
+            <i class="fas fa-tools"></i> Equipos del Cliente (Opcional)
+            <small class="float-end">
+                <button type="button" class="btn btn-sm btn-outline-light" onclick="agregarEquipo()">
+                    <i class="fas fa-plus"></i> Agregar Equipo
+                </button>
+            </small>
+        `;
+    }
+}
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const nombre = document.getElementById('nombre').value.trim();
+    
+    if (!nombre) {
+        e.preventDefault();
+        showInfo('Por favor ingresa el nombre del cliente.'));
+        document.getElementById('nombre').focus();
+        return false;
+    }
+    
+    // Validar equipos agregados
+    const equipos = document.querySelectorAll('.equipo-item');
+    let equiposValidos = true;
+    
+    equipos.forEach((equipo, index) => {
+        const nombreEquipo = equipo.querySelector('input[name*="[nombre]"]').value.trim();
+        if (!nombreEquipo) {
+            equiposValidos = false;
+            alert(`Por favor completa el nombre del Equipo ${index + 1}.`);
+            equipo.querySelector('input[name*="[nombre]"]').focus();
+            return false;
+        }
+    });
+    
+    if (!equiposValidos) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Auto-completar nombre de equipo
+document.addEventListener('input', function(e) {
+    if (e.target.name && e.target.name.includes('[marca]')) {
+        const equipoCard = e.target.closest('.equipo-item');
+        const marcaInput = e.target;
+        const modeloInput = equipoCard.querySelector('input[name*="[modelo]"]');
+        const nombreInput = equipoCard.querySelector('input[name*="[nombre]"]');
+        
+        if (marcaInput.value && modeloInput.value && !nombreInput.value) {
+            nombreInput.value = `${marcaInput.value} ${modeloInput.value}`;
+            nombreInput.classList.add('border-info');
+            setTimeout(() => nombreInput.classList.remove('border-info'), 2000);
+        }
+    }
+    
+    if (e.target.name && e.target.name.includes('[modelo]')) {
+        const equipoCard = e.target.closest('.equipo-item');
+        const modeloInput = e.target;
+        const marcaInput = equipoCard.querySelector('input[name*="[marca]"]');
+        const nombreInput = equipoCard.querySelector('input[name*="[nombre]"]');
+        
+        if (marcaInput.value && modeloInput.value && !nombreInput.value) {
+            nombreInput.value = `${marcaInput.value} ${modeloInput.value}`;
+            nombreInput.classList.add('border-info');
+            setTimeout(() => nombreInput.classList.remove('border-info'), 2000);
+        }
+    }
+});
+</script>
+{% endblock %}

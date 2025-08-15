@@ -1,0 +1,721 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Categorías - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-tags"></i> Gestión de Categorías Inteligentes</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#modalNuevaCategoria">
+            <i class="fas fa-plus"></i> Nueva Categoría
+        </button>
+        <a href="{{ url_for('reportes') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Reportes
+        </a>
+    </div>
+</div>
+
+<!-- Tabs para Repuestos y Trabajos -->
+<ul class="nav nav-tabs mb-4" id="categoriasTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="repuestos-tab" data-bs-toggle="tab" data-bs-target="#repuestos" type="button" role="tab">
+            <i class="fas fa-boxes"></i> Categorías de Repuestos
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="trabajos-tab" data-bs-toggle="tab" data-bs-target="#trabajos" type="button" role="tab">
+            <i class="fas fa-tools"></i> Categorías de Trabajos
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="estadisticas-tab" data-bs-toggle="tab" data-bs-target="#estadisticas" type="button" role="tab">
+            <i class="fas fa-chart-bar"></i> Estadísticas de Uso
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="categoriasTabContent">
+    <!-- Tab de Repuestos -->
+    <div class="tab-pane fade show active" id="repuestos" role="tabpanel">
+        <!-- Tabla de Categorías - Ancho Completo -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-boxes"></i> Categorías de Repuestos
+                            <span class="badge bg-primary ms-2" id="count-repuestos">{{ categorias_repuestos|length }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Descripción</th>
+                                        <th>Padre</th>
+                                        <th class="text-center">Palabras</th>
+                                        <th class="text-center">Repuestos</th>
+                                        <th class="text-center">Activo</th>
+                                        <th width="150">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-categorias-repuestos">
+                                    {% for categoria in categorias_repuestos %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="color-indicator me-2 categoria-color" style="--categoria-color: {{ categoria.color_codigo or '#007bff' }};"></div>
+                                                <strong>{{ categoria.nombre }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ categoria.descripcion or 'Sin descripción' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if categoria.categoria_padre %}
+                                                <span class="badge bg-secondary">{{ categoria.categoria_padre }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Principal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">{{ categoria.num_palabras or 0 }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success">{{ categoria.num_repuestos or 0 }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if categoria.activo %}
+                                                <i class="fas fa-check-circle text-success" title="Activo"></i>
+                                            {% else %}
+                                                <i class="fas fa-times-circle text-danger" title="Inactivo"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary btn-editar-categoria" 
+                                                        data-categoria-id="{{ categoria.id }}"
+                                                        data-categoria-nombre="{{ categoria.nombre }}"
+                                                        data-categoria-descripcion="{{ categoria.descripcion or '' }}"
+                                                        data-categoria-padre="{{ categoria.categoria_padre_id or '' }}"
+                                                        data-categoria-activo="{{ categoria.activo|lower }}"
+                                                        data-tipo="repuesto"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info btn-ver-palabras" 
+                                                        data-categoria-id="{{ categoria.id }}" data-categoria-nombre="{{ categoria.nombre }}"
+                                                        title="Ver palabras clave">
+                                                    <i class="fas fa-list"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning btn-toggle-categoria"
+                                                        data-categoria-id="{{ categoria.id }}" data-tipo="repuesto" data-categoria-activo="{{ categoria.activo|lower }}"
+                                                        title="Activar/Desactivar">
+                                                    <i class="fas fa-power-off"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-eliminar-categoria" 
+                                                        data-categoria-id="{{ categoria.id }}" data-categoria-nombre="{{ categoria.nombre }}" data-tipo="repuesto"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not categorias_repuestos %}
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                            No hay categorías de repuestos registradas
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel de Estadísticas y Palabras Clave -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key"></i> Palabras Clave Más Usadas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="palabras-populares-repuestos">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie"></i> Distribución por Categoría
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="distribucion-repuestos">
+                            <!-- Gráfico de distribución -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab de Trabajos -->
+    <div class="tab-pane fade" id="trabajos" role="tabpanel">
+        <!-- Tabla de Categorías de Trabajos - Ancho Completo -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tools"></i> Categorías de Trabajos
+                            <span class="badge bg-success ms-2" id="count-trabajos">{{ categorias_trabajos|length }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Descripción</th>
+                                        <th>Padre</th>
+                                        <th class="text-center">Complejidad</th>
+                                        <th class="text-center">Palabras</th>
+                                        <th class="text-center">Trabajos</th>
+                                        <th class="text-center">Activo</th>
+                                        <th width="150">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-categorias-trabajos">
+                                    {% for categoria in categorias_trabajos %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="color-indicator me-2 categoria-color" style="--categoria-color: {{ categoria.color_codigo or '#28a745' }};"></div>
+                                                <strong>{{ categoria.nombre }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ categoria.descripcion or 'Sin descripción' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if categoria.categoria_padre %}
+                                                <span class="badge bg-secondary">{{ categoria.categoria_padre }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Principal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if categoria.complejidad == 1 %}
+                                                <span class="badge bg-success">Simple</span>
+                                            {% elif categoria.complejidad == 2 %}
+                                                <span class="badge bg-warning">Medio</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Complejo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">{{ categoria.num_palabras or 0 }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{ categoria.num_trabajos or 0 }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if categoria.activo %}
+                                                <i class="fas fa-check-circle text-success" title="Activo"></i>
+                                            {% else %}
+                                                <i class="fas fa-times-circle text-danger" title="Inactivo"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary btn-editar-categoria" 
+                                                        data-categoria-id="{{ categoria.id }}"
+                                                        data-categoria-nombre="{{ categoria.nombre }}"
+                                                        data-categoria-descripcion="{{ categoria.descripcion or '' }}"
+                                                        data-categoria-padre="{{ categoria.categoria_padre_id or '' }}"
+                                                        data-categoria-complejidad="{{ categoria.complejidad or 1 }}"
+                                                        data-categoria-activo="{{ categoria.activo|lower }}"
+                                                        data-tipo="trabajo"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info btn-ver-palabras" 
+                                                        data-categoria-id="{{ categoria.id }}" data-categoria-nombre="{{ categoria.nombre }}"
+                                                        title="Ver palabras clave">
+                                                    <i class="fas fa-list"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning btn-toggle-categoria"
+                                                        data-categoria-id="{{ categoria.id }}" data-tipo="trabajo" data-categoria-activo="{{ categoria.activo|lower }}"
+                                                        title="Activar/Desactivar">
+                                                    <i class="fas fa-power-off"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-eliminar-categoria" 
+                                                        data-categoria-id="{{ categoria.id }}" data-categoria-nombre="{{ categoria.nombre }}" data-tipo="trabajo"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not categorias_trabajos %}
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                            No hay categorías de trabajos registradas
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key"></i> Palabras Clave Más Usadas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="palabras-populares-trabajos">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab de Estadísticas -->
+    <div class="tab-pane fade" id="estadisticas" role="tabpanel">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-tags fa-2x text-primary mb-2"></i>
+                        <h3 class="text-primary">{{ total_categorias }}</h3>
+                        <p class="text-muted mb-0">Total Categorías</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-key fa-2x text-success mb-2"></i>
+                        <h3 class="text-success">{{ total_palabras }}</h3>
+                        <p class="text-muted mb-0">Palabras Clave</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-2x text-warning mb-2"></i>
+                        <h3 class="text-warning">{{ clasificaciones_automaticas }}</h3>
+                        <p class="text-muted mb-0">Clasificaciones IA</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie"></i> Efectividad por Categoría
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="efectividadChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Categoría -->
+<div class="modal fade" id="modalNuevaCategoria" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> Nueva Categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formNuevaCategoria">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-control" id="tipoCategoria" required>
+                            <option value="repuesto">Repuesto</option>
+                            <option value="trabajo">Trabajo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la Categoría</label>
+                        <input type="text" class="form-control" id="nombreCategoria" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría Padre (opcional)</label>
+                        <select class="form-control" id="categoriaPadre">
+                            <option value="">Sin categoría padre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcionCategoria" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" class="form-control" id="colorCategoria" value="#007bff">
+                    </div>
+                    <div class="mb-3" id="complejidadContainer" style="display: none;">
+                        <label class="form-label">Complejidad</label>
+                        <select class="form-control" id="complejidadCategoria">
+                            <option value="1">Simple</option>
+                            <option value="2">Medio</option>
+                            <option value="3">Complejo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Categoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Categoría -->
+<div class="modal fade" id="modalEditarCategoria" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i> Editar Categoría
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarCategoria">
+                <div class="modal-body">
+                    <input type="hidden" id="editCategoriaId">
+                    <input type="hidden" id="editTipoCategoria">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la Categoría</label>
+                        <input type="text" class="form-control" id="editNombreCategoria" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría Padre (opcional)</label>
+                        <select class="form-control" id="editCategoriaPadre">
+                            <option value="">Sin categoría padre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editDescripcionCategoria" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" class="form-control" id="editColorCategoria">
+                    </div>
+                    <div class="mb-3" id="editComplejidadContainer" style="display: none;">
+                        <label class="form-label">Complejidad</label>
+                        <select class="form-control" id="editComplejidadCategoria">
+                            <option value="1">Simple</option>
+                            <option value="2">Medio</option>
+                            <option value="3">Complejo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editActivoCategoria">
+                            <label class="form-check-label" for="editActivoCategoria">
+                                Categoría activa
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar Categoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Palabras Clave -->
+<div class="modal fade" id="modalPalabrasCategoria" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="palabrasCategoriaTitle">
+                    <i class="fas fa-key"></i> Palabras Clave
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="palabrasContainer">
+                    <!-- Se cargan dinámicamente -->
+                </div>
+                <hr>
+                <div class="mt-3">
+                    <h6><i class="fas fa-plus"></i> Agregar Nueva Palabra Clave</h6>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="nuevaPalabraClave" placeholder="Escribir nueva palabra clave...">
+                        <button class="btn btn-primary" type="button" onclick="agregarPalabraClave()">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para indicadores de color de categorías */
+.categoria-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background-color: var(--categoria-color, #007bff);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Asegurar compatibilidad con navegadores antiguos */
+.color-indicator {
+    min-width: 12px;
+    min-height: 12px;
+}
+</style>
+
+<script>
+// Mostrar/ocultar campo de complejidad según el tipo
+document.getElementById('tipoCategoria').addEventListener('change', function() {
+    const complejidadContainer = document.getElementById('complejidadContainer');
+    if (this.value === 'trabajo') {
+        complejidadContainer.style.display = 'block';
+    } else {
+        complejidadContainer.style.display = 'none';
+    }
+});
+
+// Enviar formulario de nueva categoría
+document.getElementById('formNuevaCategoria').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const datos = {
+        tipo: document.getElementById('tipoCategoria').value,
+        nombre: document.getElementById('nombreCategoria').value,
+        categoria_padre: document.getElementById('categoriaPadre').value || null,
+        descripcion: document.getElementById('descripcionCategoria').value,
+        color_codigo: document.getElementById('colorCategoria').value,
+        complejidad: document.getElementById('complejidadCategoria').value || 1
+    };
+    
+    fetch('/api/categorias', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(datos)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Categoría creada exitosamente');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showError('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Error al crear la categoría');
+    });
+});
+
+// Funciones para gestión de categorías de REPUESTOS
+function editarCategoriaRepuesto(id, nombre, descripcion, padreId, activo) {
+    // Mostrar modal de edición con datos precargados
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarCategoria'));
+    
+    // Precargar datos en el modal
+    document.getElementById('editCategoriaId').value = id;
+    document.getElementById('editTipoCategoria').value = 'repuesto';
+    document.getElementById('editNombreCategoria').value = nombre || '';
+    document.getElementById('editDescripcionCategoria').value = descripcion || '';
+    document.getElementById('editCategoriaPadre').value = padreId || '';
+    document.getElementById('editActivoCategoria').checked = activo === 'true' || activo === true;
+    
+    // Ocultar campo de complejidad para repuestos
+    document.getElementById('editComplejidadContainer').style.display = 'none';
+    
+    modal.show();
+}
+
+function eliminarCategoriaRepuesto(id, nombre) {
+    showConfirm(
+        `¿Está seguro de que desea eliminar la categoría "${nombre}"?`,
+        function(confirmed) {
+            if (confirmed) {
+                fetch(`/api/categorias/repuesto/${id}`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccess('Categoría eliminada exitosamente');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showError('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Error al eliminar la categoría');
+                });
+            }
+        }
+    );
+}
+
+// NOTA: Funciones movidas a gestion-categorias.js para evitar duplicación
+
+// NOTA: Función eliminarCategoriaTrabajo movida a gestion-categorias.js
+
+// NOTA: Función verPalabrasCategoria movida a gestion-categorias.js
+
+// NOTA: Función toggleCategoriaEstado movida a gestion-categorias.js
+
+// Sistema de notificaciones manejado por notifications.js
+
+// NOTA: Event delegation movido completamente a gestion-categorias.js
+// Para evitar duplicación y conflictos entre sistemas
+
+// Formulario de editar categoría
+document.addEventListener('DOMContentLoaded', function() {
+    const formEditar = document.getElementById('formEditarCategoria');
+    if (formEditar) {
+        formEditar.addEventListener('submit', function(e) {
+            e.preventDefault();
+            actualizarCategoria();
+        });
+    }
+});
+
+function actualizarCategoria() {
+    const id = document.getElementById('editCategoriaId').value;
+    const tipo = document.getElementById('editTipoCategoria').value;
+    
+    const datos = {
+        nombre: document.getElementById('editNombreCategoria').value,
+        descripcion: document.getElementById('editDescripcionCategoria').value,
+        categoria_padre: document.getElementById('editCategoriaPadre').value || null,
+        color_codigo: document.getElementById('editColorCategoria').value,
+        activo: document.getElementById('editActivoCategoria').checked
+    };
+    
+    if (tipo === 'trabajo') {
+        datos.complejidad = parseInt(document.getElementById('editComplejidadCategoria').value);
+    }
+    
+    fetch(`/api/categorias/${tipo}/${id}`, {
+        method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(datos)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+            showSuccess('Categoría actualizada exitosamente');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarCategoria'));
+            modal.hide();
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showError('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+        showError('Error al actualizar la categoría');
+    });
+}
+
+// Función para agregar palabras clave
+let categoriaActualPalabras = null;
+
+// NOTA: Función agregarPalabraClave disponible en gestion-categorias.js
+
+// Cargar estadísticas al cambiar a la pestaña
+document.getElementById('estadisticas-tab').addEventListener('click', function() {
+    cargarEstadisticas();
+});
+
+function cargarEstadisticas() {
+    fetch('/api/estadisticas_categorias')
+        .then(response => response.json())
+        .then(data => {
+            if (data.categorias && data.categorias.length > 0) {
+            // Actualizar gráfico de efectividad
+            const ctx = document.getElementById('efectividadChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.categorias.map(c => c.nombre),
+                    datasets: [{
+                        data: data.categorias.map(c => c.uso_count),
+                        backgroundColor: data.categorias.map(c => c.color_codigo)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            }
+        })
+        .catch(error => {
+            console.error('Error cargando estadísticas:', error);
+        });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/gestion-categorias.js') }}?v=20250115-v2"></script>
+
+{% endblock %}

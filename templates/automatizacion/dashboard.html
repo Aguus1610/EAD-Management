@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Automatización - Gestión de Taller{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-robot"></i> Centro de Automatización</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Inicio</a></li>
+            <li class="breadcrumb-item active">Automatización</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Estadísticas de automatización -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Programas Activos</h6>
+                        <h3 class="card-title mb-1">{{ stats.programas_activos }}</h3>
+                        <small class="text-success">
+                            <i class="fas fa-play"></i> Ejecutándose
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-calendar-check text-primary"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar" role="progressbar" style="width: 85%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Alertas Configuradas</h6>
+                        <h3 class="card-title mb-1">{{ stats.alertas_activas }}</h3>
+                        <small class="text-info">
+                            <i class="fas fa-bell"></i> Vigilando
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 70%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Tareas Programadas</h6>
+                        <h3 class="card-title mb-1">{{ stats.tareas_programadas }}</h3>
+                        <small class="text-secondary">
+                            <i class="fas fa-clock"></i> Automáticas
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-cogs text-secondary"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-secondary" role="progressbar" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card metric-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="card-subtitle mb-2 text-muted">Aprobaciones Pendientes</h6>
+                        <h3 class="card-title mb-1">{{ stats.aprobaciones_pendientes }}</h3>
+                        <small class="text-danger">
+                            <i class="fas fa-hourglass-half"></i> Esperando
+                        </small>
+                    </div>
+                    <div class="metric-icon">
+                        <i class="fas fa-clipboard-check text-danger"></i>
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 4px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 90%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navegación rápida -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Panel de Control
+                </h6>
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-6">
+                        <a href="{{ url_for('programas_mantenimiento') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                            <strong>Programas de Mantenimiento</strong>
+                            <small class="text-muted">Automatizar mantenimientos</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="#" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="proximamente()">
+                            <i class="fas fa-bell fa-2x mb-2"></i>
+                            <strong>Alertas Automáticas</strong>
+                            <small class="text-muted">Configurar notificaciones</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="#" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="proximamente()">
+                            <i class="fas fa-tasks fa-2x mb-2"></i>
+                            <strong>Tareas Programadas</strong>
+                            <small class="text-muted">Automatizar procesos</small>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <a href="#" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="proximamente()">
+                            <i class="fas fa-check-double fa-2x mb-2"></i>
+                            <strong>Workflow Aprobaciones</strong>
+                            <small class="text-muted">Gestionar aprobaciones</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Programas próximos y alertas -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Mantenimientos Programados (Próximos 7 días)
+                </h6>
+                <span class="badge bg-primary">{{ stats.mantenimientos_programados_hoy }} hoy</span>
+            </div>
+            <div class="card-body">
+                {% if programas_proximos %}
+                <div class="list-group list-group-flush">
+                    {% for programa in programas_proximos[:5] %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <div class="fw-bold">{{ programa.nombre }}</div>
+                            <small class="text-muted">
+                                {% if programa.equipo_nombre %}
+                                <i class="fas fa-cog me-1"></i>{{ programa.equipo_nombre }}
+                                {% else %}
+                                <i class="fas fa-building me-1"></i>{{ programa.cliente_nombre }}
+                                {% endif %}
+                                • {{ programa.tipo_mantenimiento }}
+                            </small>
+                            <div class="small">
+                                <span class="badge bg-{{ 'danger' if programa.proxima_ejecucion <= date.today().strftime('%Y-%m-%d') else 'warning' if (programa.proxima_ejecucion | string)[:10] <= (date.today() + timedelta(days=3)).strftime('%Y-%m-%d') else 'info' }}">
+                                    {{ programa.proxima_ejecucion }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('ejecutar_programa_mantenimiento', programa_id=programa.id) }}" 
+                               class="btn btn-outline-success" onclick="showConfirm('¿Ejecutar este programa de mantenimiento ahora?', function(confirmed) { return confirmed; }); return false)"
+                               data-bs-toggle="tooltip" title="Ejecutar ahora">
+                                <i class="fas fa-play"></i>
+                            </a>
+                            <button class="btn btn-outline-primary" onclick="verDetallesPrograma({{ programa.id }})"
+                                    data-bs-toggle="tooltip" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if programas_proximos|length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('programas_mantenimiento') }}" class="btn btn-sm btn-outline-primary">
+                        Ver todos los programas <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">No hay mantenimientos programados</h6>
+                    <p class="text-muted">Configura programas de mantenimiento automático</p>
+                    <a href="{{ url_for('programas_mantenimiento') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear Programa
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Alertas Recientes
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if alertas_recientes %}
+                <div class="timeline">
+                    {% for alerta in alertas_recientes[:6] %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <i class="fas fa-{{ 'exclamation-triangle' if alerta.tipo == 'stock_bajo' else 'clock' if alerta.tipo == 'mantenimiento_vencido' else 'times' }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between">
+                                <div class="fw-bold">{{ alerta.nombre }}</div>
+                                {% if alerta.fecha_ejecucion %}
+                                <small class="text-muted">{{ alerta.fecha_ejecucion[:16] }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="small text-muted mt-1">
+                                <span class="badge bg-{{ 'warning' if alerta.tipo == 'stock_bajo' else 'danger' if alerta.tipo == 'mantenimiento_vencido' else 'info' }}">
+                                    {{ alerta.tipo.replace('_', ' ').title() }}
+                                </span>
+                                {% if alerta.contador_disparos %}
+                                • Disparada {{ alerta.contador_disparos }} veces
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-bell-slash text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">No hay alertas recientes</h6>
+                    <p class="text-muted">Las alertas automáticas aparecerán aquí</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aprobaciones pendientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Workflow de Aprobaciones Pendientes
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if aprobaciones_pendientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Solicitante</th>
+                                <th>Motivo</th>
+                                <th>Monto</th>
+                                <th>Fecha Solicitud</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aprobacion in aprobaciones_pendientes[:8] %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-info">{{ aprobacion.tipo_objeto.replace('_', ' ').title() }}</span>
+                                    <br><small class="text-muted">ID: {{ aprobacion.objeto_id }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ aprobacion.solicitante_nombre or 'Sistema' }}</div>
+                                    <small class="text-muted">Nivel {{ aprobacion.nivel_aprobacion }}</small>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;">
+                                        {{ aprobacion.motivo_solicitud or 'Sin motivo especificado' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if aprobacion.monto_solicitado %}
+                                    <span class="fw-bold text-success">${{ "%.2f"|format(aprobacion.monto_solicitado) }}</span>
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ aprobacion.fecha_solicitud[:10] }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-success" onclick="aprobar({{ aprobacion.id }})"
+                                                data-bs-toggle="tooltip" title="Aprobar">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="rechazar({{ aprobacion.id }})"
+                                                data-bs-toggle="tooltip" title="Rechazar">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="verDetalle({{ aprobacion.id }})"
+                                                data-bs-toggle="tooltip" title="Ver detalle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h6 class="mt-3">No hay aprobaciones pendientes</h6>
+                    <p class="text-muted">Todas las solicitudes están al día</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.metric-card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.metric-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.timeline-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-top: 4px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Auto-actualizar cada 2 minutos
+    setInterval(function() {
+        window.location.reload();
+    }, 120000);
+});
+
+function proximamente() {
+    if (window.notificationSystem) {
+        window.notificationSystem.info('Función próximamente disponible');
+    } else {
+        showInfo('Función próximamente disponible'));
+    }
+}
+
+function verDetallesPrograma(programaId) {
+    window.notificationSystem?.info(`Ver detalles del programa #${programaId}`);
+}
+
+function aprobar(aprobacionId) {
+    showConfirm('¿Aprobar esta solicitud?', function(confirmed) { if (confirmed))) {
+        window.notificationSystem?.success(`Solicitud #${aprobacionId} aprobada`);
+        // Aquí iría la lógica de aprobación
+    }
+}
+
+function rechazar(aprobacionId) {
+    const motivo = prompt('Motivo del rechazo (opcional):');
+    if (motivo !== null) {
+        window.notificationSystem?.warning(`Solicitud #${aprobacionId} rechazada`);
+        // Aquí iría la lógica de rechazo
+    }
+}
+
+function verDetalle(aprobacionId) {
+    window.notificationSystem?.info(`Ver detalle de solicitud #${aprobacionId}`);
+}
+</script>
+{% endblock %}
