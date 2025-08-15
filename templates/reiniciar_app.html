@@ -84,7 +84,7 @@
                     <br><strong>Una vez realizada, no se puede deshacer.</strong>
                 </p>
 
-                <form method="POST" onsubmit="return confirmarReinicio()">
+                <form method="POST" id="form-reiniciar">
                     <div class="mb-4">
                         <div class="form-check d-inline-block">
                             <input class="form-check-input" type="checkbox" id="confirmar" name="confirmar" required>
@@ -95,7 +95,7 @@
                     </div>
 
                     <div class="d-grid gap-2 col-6 mx-auto">
-                        <button type="submit" class="btn btn-danger btn-lg" id="btn-reiniciar" disabled>
+                        <button type="button" class="btn btn-danger btn-lg" id="btn-reiniciar" disabled onclick="confirmarReinicio()">
                             <i class="fas fa-trash-alt"></i> 
                             REINICIAR APLICACIÓN
                         </button>
@@ -138,14 +138,29 @@ document.getElementById('confirmar').addEventListener('change', function() {
 
 // Confirmación adicional
 function confirmarReinicio() {
-    showConfirm(
+    // Verificar que el checkbox esté marcado
+    const checkbox = document.getElementById('confirmar');
+    if (!checkbox.checked) {
+        window.showError('Debes marcar la confirmación antes de continuar');
+        return;
+    }
+    
+    // Obtener el botón para mostrar estado de carga
+    const btn = document.getElementById('btn-reiniciar');
+    const originalHTML = btn.innerHTML;
+    
+    // Mostrar confirmación
+    window.showConfirm(
         '¿Estás completamente seguro de que quieres eliminar TODOS los datos?\n\nEsta acción NO se puede deshacer.',
         function(confirmed) {
             if (confirmed) {
-                // Continuar con el reinicio
-                return true;
+                // Cambiar estado del botón
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reiniciando...';
+                
+                // Enviar formulario
+                document.getElementById('form-reiniciar').submit();
             }
-            return false;
         },
         {
             titulo: 'Reiniciar Aplicación',
@@ -153,7 +168,6 @@ function confirmarReinicio() {
             tipo: 'danger'
         }
     );
-    return false; // Evitar envío inmediato del formulario
 }
 
 // Actualizar contadores dinámicamente
